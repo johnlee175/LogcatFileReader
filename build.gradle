@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.johnsoft.ui.Reader'
+    }
+    version '0.0.9'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile files('libs/*.jar')
+}
