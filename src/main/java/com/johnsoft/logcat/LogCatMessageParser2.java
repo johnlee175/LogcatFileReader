@@ -29,7 +29,7 @@ public class LogCatMessageParser2 extends LogCatMessageParser {
     //04-25 19:04:38.041  1190  1190 I MyTag: this is message body
     private static final Pattern sLogHeaderPattern = Pattern.compile(
             "^(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)"
-                    + "\\s+(\\d*)\\s*(\\S+)\\s([VDIWEAF])\\s(\\w+):\\s(.*)");
+                    + "\\s+(\\d*)\\s*(\\S+)\\s([VDIWEAF])\\s(.*):\\s(.*)");
 
     @Override
     protected void processLogLine(String line, List<LogCatMessage> messages) {
@@ -41,16 +41,23 @@ public class LogCatMessageParser2 extends LogCatMessageParser {
             if (currLogLevel == null && matcher.group(4).equals("F")) {
                 currLogLevel = LogLevel.ASSERT;
             }
-            LogCatMessage m = new LogCatMessage(currLogLevel,
-                    matcher.group(2)/*currPid*/,
-                    matcher.group(3)/*currTid*/,
-                    ""/*pkgName*/,
-                    ""/*threadName*/,
-                    matcher.group(5).trim()/*currTag*/,
-                    matcher.group(1)/*currTime*/,
-                    matcher.group(6)/*currMsg*/,
-                    false/*onlyBody*/);
-            messages.add(m);
+            boolean flag = false;
+            for (String txtMsg : splitTextWithFixLength(matcher.group(6)/*currMsg*/, DEFAULT_LIMIT)) {
+                String pkgName = "";
+                String threadName = "";
+                messages.add(new LogCatMessage(currLogLevel,
+                        matcher.group(2)/*currPid*/,
+                        matcher.group(3)/*currTid*/,
+                        pkgName,
+                        threadName,
+                        matcher.group(5).trim()/*currTag*/,
+                        matcher.group(1)/*currTime*/,
+                        txtMsg,
+                        flag/*onlyBody*/));
+                if (!flag) {
+                    flag = true;
+                }
+            }
         }
     }
 }

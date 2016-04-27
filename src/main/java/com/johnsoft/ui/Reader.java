@@ -147,7 +147,7 @@ public class Reader {
                     case "threadtime":
                         parser = new LogCatMessageParser2();
                         break;
-                    case "java-custom":
+                    case "javacustom":
                         parser = new LogCatMessageParser3();
                         break;
                 }
