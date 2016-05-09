@@ -30,7 +30,7 @@ public class LogCatMessageParser3 extends LogCatMessageParser {
     //Example: [2016-03-15 13:35:05.503][main][WARN ]MyTag - this is message body
     private static final Pattern sLogHeaderPattern = Pattern.compile(
             "^\\[(\\d\\d\\d\\d-\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)\\]"
-                    + "\\[(.*)\\]\\[(\\w{4}.)\\](.*)\\s-\\s(.*)");
+                    + "\\[(.*)\\]\\[(\\w{4}.)\\](.*?)\\s-\\s(.*)");
 
     @Override
     protected void processLogLine(String line, List<LogCatMessage> messages) {

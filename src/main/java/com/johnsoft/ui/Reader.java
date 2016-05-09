@@ -95,7 +95,7 @@ public class Reader {
                     try {
                         messageList = parser.processLogLines(logFile);
                     } catch (IOException e) {
-                        JOptionPane.showMessageDialog(null, "加载日志文件失败");
+                        JOptionPane.showMessageDialog(null, "Failed to load the log file");
                         e.printStackTrace();
                         messageList = parser.processLogLines(MESSAGES);
                     }
@@ -126,7 +126,7 @@ public class Reader {
                 try {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(null, "没有可选的系统风格UI皮肤");
+                    JOptionPane.showMessageDialog(null, "No optional system style UI skin");
                     e.printStackTrace();
                 }
                 show();

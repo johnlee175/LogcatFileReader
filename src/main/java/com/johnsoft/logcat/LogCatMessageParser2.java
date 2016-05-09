@@ -29,7 +29,7 @@ public class LogCatMessageParser2 extends LogCatMessageParser {
     //04-25 19:04:38.041  1190  1190 I MyTag: this is message body
     private static final Pattern sLogHeaderPattern = Pattern.compile(
             "^(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)"
-                    + "\\s+(\\d*)\\s*(\\S+)\\s([VDIWEAF])\\s(.*):\\s(.*)");
+                    + "\\s+(\\d*)\\s*(\\S+)\\s([VDIWEAF])\\s(.*?):\\s(.*)");
 
     @Override
     protected void processLogLine(String line, List<LogCatMessage> messages) {
