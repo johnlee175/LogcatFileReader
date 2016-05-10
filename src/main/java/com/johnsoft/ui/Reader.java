@@ -18,6 +18,7 @@ package com.johnsoft.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -92,7 +93,8 @@ public class Reader {
         jFrame.setContentPane(jPanel);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         jFrame.setResizable(true);
-        jFrame.setSize(1000, 400);
+        jFrame.setSize(1000, 500);
+        jFrame.setMinimumSize(new Dimension(600, 200));
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
         synchronized(this) {
@@ -184,7 +186,7 @@ public class Reader {
                     fileChooser.setFileFilter(new FileFilter() {
                         @Override
                         public boolean accept(File f) {
-                            return f.getName().endsWith(".log");
+                            return f.isDirectory() || f.getName().endsWith(".log");
                         }
                         @Override
                         public String getDescription() {
@@ -254,10 +256,11 @@ public class Reader {
                     panel.add(fileChooser, BorderLayout.CENTER);
                     panel.add(bottom, BorderLayout.SOUTH);
                     dialog.setContentPane(panel);
-                    dialog.setTitle("Open Dialog");
+                    dialog.setTitle("Open File Dialog");
                     dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                     dialog.setAlwaysOnTop(true);
                     dialog.setSize(panel.getPreferredSize());
+                    dialog.setMinimumSize(new Dimension(600, 200));
                     dialog.setLocationRelativeTo(null);
                     dialog.setVisible(true);
                     switch (formatExample.getSelectedIndex()) {
