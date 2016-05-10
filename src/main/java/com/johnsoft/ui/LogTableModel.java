@@ -29,6 +29,7 @@ import javax.swing.table.AbstractTableModel;
 
 import com.johnsoft.logcat.LogCatFilter;
 import com.johnsoft.logcat.LogCatMessage;
+import com.johnsoft.logcat.LogicalPredicate;
 
 /**
  * @author John Kenrinus Lee
@@ -61,7 +62,7 @@ public class LogTableModel extends AbstractTableModel {
         });
     }
 
-    public final void setRowFilter(final List<LogCatFilter> list) {
+    public final void setRowFilter(final List<LogCatFilter> list, final LogicalPredicate predicate) {
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new RuntimeException("call this method from event dispatch thread");
         }
@@ -78,12 +79,25 @@ public class LogTableModel extends AbstractTableModel {
                 final ArrayList<Integer> indexList = new ArrayList<>();
                 for (int i = 0; i < modelList.size(); ++i) {
                     LogCatMessage message = modelList.get(i);
-                    boolean match = true;
-                    for (LogCatFilter f : list) {
-                        if (!f.matches(message)) {
-                            match = false;
-                            break;
+                    boolean match;
+                    if (predicate == LogicalPredicate.AND) {
+                        match = true;
+                        for (LogCatFilter f : list) {
+                            if (!f.matches(message)) {
+                                match = false;
+                                break;
+                            }
                         }
+                    } else if (predicate == LogicalPredicate.OR) {
+                        match = false;
+                        for (LogCatFilter f : list) {
+                            if (f.matches(message)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Unknown LogicalPredicate");
                     }
                     if (match) {
                         indexList.add(i);

@@ -19,6 +19,7 @@ package com.johnsoft.ui;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -79,7 +80,10 @@ public class Reader {
         toolbar.add(new JLabel(" Message Filter[e.g. : \"pid:1024 tag:Activ text:Con\"]: "), BorderLayout
                 .WEST);
         toolbar.add(tableView.getMessageFilter(), BorderLayout.CENTER);
-        toolbar.add(tableView.getLevelSelector(), BorderLayout.EAST);
+        JPanel selectors = new JPanel(new FlowLayout());
+        selectors.add(tableView.getLogicalSelector());
+        selectors.add(tableView.getLevelSelector());
+        toolbar.add(selectors, BorderLayout.EAST);
         JPanel jPanel = new JPanel(new BorderLayout());
         JScrollPane jScrollPane = new JScrollPane(tableView);
         jPanel.add(jScrollPane, BorderLayout.CENTER);

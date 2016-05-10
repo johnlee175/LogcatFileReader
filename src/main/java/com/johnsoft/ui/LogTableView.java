@@ -43,6 +43,7 @@ import javax.swing.table.TableColumnModel;
 
 import com.johnsoft.logcat.LogCatFilter;
 import com.johnsoft.logcat.LogLevel;
+import com.johnsoft.logcat.LogicalPredicate;
 
 /**
  * @author John Kenrinus Lee
@@ -56,8 +57,8 @@ public class LogTableView extends JTable {
     private static final Color ERROR_COLOR = new Color(150, 0, 0);
     private static final Color ASSERT_COLOR = new Color(200, 125, 125);
 
-
     private JComboBox<LogLevel> levelSelector;
+    private JComboBox<LogicalPredicate> logicalSelector;
     private JTextField messageFilter;
 
     public LogTableView() {
@@ -68,6 +69,10 @@ public class LogTableView extends JTable {
 
     public JComboBox<LogLevel> getLevelSelector() {
         return levelSelector;
+    }
+
+    public JComboBox<LogicalPredicate> getLogicalSelector() {
+        return logicalSelector;
     }
 
     public JTextField getMessageFilter() {
@@ -144,6 +149,15 @@ public class LogTableView extends JTable {
                 }
             }
         });
+        logicalSelector = new JComboBox<>(new LogicalPredicate[] {LogicalPredicate.AND, LogicalPredicate.OR});
+        logicalSelector.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    doFilter();
+                }
+            }
+        });
     }
 
     private void createTextField() {
@@ -170,7 +184,8 @@ public class LogTableView extends JTable {
         List<LogCatFilter> logCatFilters = LogCatFilter.fromString(messageFilter.getText(),
                 (LogLevel) levelSelector.getSelectedItem());
         if (logCatFilters != null && !logCatFilters.isEmpty()) {
-            ((LogTableModel) getModel()).setRowFilter(logCatFilters);
+            ((LogTableModel) getModel()).setRowFilter(logCatFilters,
+                    (LogicalPredicate) logicalSelector.getSelectedItem());
         }
     }
 
