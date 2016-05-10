@@ -219,7 +219,7 @@ public class Reader {
                         }
                     });
                     formatExample.setEditable(false);
-                    final String labelPrefix = "log file text format:";
+                    final String labelPrefix = "  log file text format:";
                     final JLabel formatDescription = new JLabel(labelPrefix + " long ");
                     formatExample.addItemListener(new ItemListener() {
                         @Override
@@ -246,7 +246,7 @@ public class Reader {
                     bottom.add(formatDescription, BorderLayout.WEST);
                     bottom.add(formatExample, BorderLayout.CENTER);
                     JPanel panel = new JPanel(new BorderLayout());
-                    panel.add(new JLabel("which log text file would you want to open: "), BorderLayout.NORTH);
+                    panel.add(new JLabel("  which log text file would you want to open: "), BorderLayout.NORTH);
                     panel.add(fileChooser, BorderLayout.CENTER);
                     panel.add(bottom, BorderLayout.SOUTH);
                     dialog.setContentPane(panel);

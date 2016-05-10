@@ -19,12 +19,18 @@ package com.johnsoft.ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -33,6 +39,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import com.johnsoft.logcat.LogCatFilter;
 import com.johnsoft.logcat.LogLevel;
@@ -88,6 +95,42 @@ public class LogTableView extends JTable {
         textColumn.setMinWidth(500);
         textColumn.setPreferredWidth(800);
         textColumn.setCellRenderer(new MultiLineCellRenderer());
+
+        getTableHeader().addMouseListener(new MouseAdapter() {
+            private final String prefixText = "hide column";
+            private final JPopupMenu popupMenu = new JPopupMenu();
+            private final JMenuItem hideColumn = popupMenu.add(new JMenuItem(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final String[] strings = hideColumn.getText().split("\\s+");
+                    if (strings.length > 0) {
+                        final String identifier = strings[strings.length - 1];
+                        if (identifier != null && !identifier.trim().isEmpty()) {
+                            // hide column
+                            TableColumnModel columnModel = getColumnModel();
+                            int columnIdx = columnModel.getColumnIndex(identifier);
+                            TableColumn column = columnModel.getColumn(columnIdx);
+                            column.setPreferredWidth(0);
+                            column.setMinWidth(0);
+                            column.setMaxWidth(0);
+                            column = getTableHeader().getColumnModel().getColumn(columnIdx);
+                            column.setPreferredWidth(0);
+                            column.setMinWidth(0);
+                            column.setMaxWidth(0);
+                        }
+                    }
+                }
+            }));
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON3) {//right click
+                    final int columnIdx = getTableHeader().columnAtPoint(e.getPoint());
+                    final TableColumnModel columnModel = getColumnModel();
+                    hideColumn.setText(prefixText + " " + columnModel.getColumn(columnIdx).getIdentifier());
+                    popupMenu.show(getTableHeader(), e.getX(), e.getY());
+                }
+            }
+        });
     }
 
     private void createComboBox() {
