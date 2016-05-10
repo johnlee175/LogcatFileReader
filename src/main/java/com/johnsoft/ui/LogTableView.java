@@ -34,6 +34,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -141,6 +142,7 @@ public class LogTableView extends JTable {
     private void createComboBox() {
         levelSelector = new JComboBox<>(new LogLevel[] {LogLevel.VERBOSE, LogLevel.DEBUG, LogLevel.INFO,
                 LogLevel.WARN, LogLevel.ERROR, LogLevel.ASSERT});
+        levelSelector.setEditable(false);
         levelSelector.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -158,6 +160,7 @@ public class LogTableView extends JTable {
                 }
             }
         });
+        logicalSelector.setEditable(false);
     }
 
     private void createTextField() {
@@ -228,6 +231,8 @@ public class LogTableView extends JTable {
                                                        Object value, boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
             setText(value.toString());
+            setVerticalTextPosition(SwingConstants.TOP);
+            setVerticalAlignment(SwingConstants.TOP);
             applyCellStyle(this, table, value, isSelected, hasFocus, row, column);
             return this;
         }
