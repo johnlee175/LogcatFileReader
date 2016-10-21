@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
@@ -35,23 +36,28 @@ import com.johnsoft.logcat.LogicalPredicate;
  * @author John Kenrinus Lee
  * @version 2016-04-25
  */
-public class LogTableModel extends AbstractTableModel {
+public final class LogTableModel extends AbstractTableModel {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> scheduledFuture;
     private final String[] columnHeaders = new String[] {
             "Level", "Time", "PID", "TID", "Application", "Thread", "Tag", "Text"
     };
+    /** should not update it except from setDataSource(List) */
     private List<LogCatMessage> modelList = new ArrayList<>();
+    /** should not update it except from setDataSource(List) */
+    private int modelSize;
+
     private List<Integer> viewList = new ArrayList<>();
 
     /** should call this method only once */
     public final void setDataSource(List<LogCatMessage> list) {
         this.modelList = Collections.unmodifiableList(list);
-        final ArrayList<Integer> indexList = new ArrayList<>(modelList.size());
-        for (int i = 0; i < modelList.size(); ++i) {
+        this.modelSize = modelList.size();
+        final ArrayList<Integer> indexList = new ArrayList<>(modelSize);
+        for (int i = 0; i < modelSize; ++i) {
             indexList.add(i);
         }
-        synchronized(LogTableModel.this) {
+        synchronized (LogTableModel.this) {
             this.viewList = indexList;
         }
         SwingUtilities.invokeLater(new Runnable() {
@@ -77,7 +83,7 @@ public class LogTableModel extends AbstractTableModel {
             @Override
             public void run() {
                 final ArrayList<Integer> indexList = new ArrayList<>();
-                for (int i = 0; i < modelList.size(); ++i) {
+                for (int i = 0; i < modelSize; ++i) {
                     LogCatMessage message = modelList.get(i);
                     boolean match;
                     if (predicate == LogicalPredicate.AND) {
@@ -103,7 +109,7 @@ public class LogTableModel extends AbstractTableModel {
                         indexList.add(i);
                     }
                 }
-                synchronized(LogTableModel.this) {
+                synchronized (LogTableModel.this) {
                     viewList = indexList;
                 }
                 SwingUtilities.invokeLater(new Runnable() {
@@ -118,10 +124,14 @@ public class LogTableModel extends AbstractTableModel {
 
     public final String getLogLevel(int row) {
         final LogCatMessage message;
-        synchronized(LogTableModel.this) {
-            message = modelList.get(viewList.get(row));
-        }
+        message = modelList.get(getModelRowIndex(row));
         return String.valueOf(message.getLogLevel().getPriorityLetter());
+    }
+
+    public final int getModelRowIndex(int row) {
+        synchronized (LogTableModel.this) {
+            return viewList == null ? -1 : viewList.get(row);
+        }
     }
 
     @Override
@@ -141,7 +151,9 @@ public class LogTableModel extends AbstractTableModel {
 
     @Override
     public int getRowCount() {
-        return viewList.size();
+        synchronized (LogTableModel.this) {
+            return viewList == null ? -1 : viewList.size();
+        }
     }
 
     @Override
@@ -151,13 +163,11 @@ public class LogTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        final LogCatMessage message;
-        synchronized(LogTableModel.this) {
-            if (viewList == null || rowIndex >= viewList.size()) {
-                return null;
-            }
-            message = modelList.get(viewList.get(rowIndex));
+        if (rowIndex >= getRowCount()) {
+            return null;
         }
+        final LogCatMessage message;
+        message = modelList.get(getModelRowIndex(rowIndex));
         if (message.isOnlyBody() && columnIndex != 7) {
             return "";
         }
@@ -181,5 +191,82 @@ public class LogTableModel extends AbstractTableModel {
             default:
                 return null;
         }
+    }
+
+    public final int doFind(int from, boolean findNextOne, String findingText, boolean matchCase, boolean regex) {
+        int size = getRowCount();
+        if (size <= 0) {
+            return -1;
+        }
+        if (findingText == null || findingText.trim().isEmpty()) {
+            return -1;
+        }
+        if (!matchCase) {
+            findingText = findingText.toLowerCase();
+        }
+        int start = 0;
+        int result = doFind(from, findNextOne, findingText, matchCase, regex, size, start);
+        if (result >= 0) {
+            return result;
+        }
+        if (findNextOne) {
+            size = from;
+            from = 0;
+        } else {
+            start = from;
+            from = size - 1;
+        }
+        return doFind(from, findNextOne, findingText, matchCase, regex, size, start);
+    }
+
+    private int doFind(int from, boolean findNextOne, String findingText,
+                        boolean matchCase, boolean regex, int size, int start) {
+        final Pattern pattern;
+        if (regex) {
+            pattern = Pattern.compile(findingText);
+        } else {
+            pattern = null;
+        }
+        while (true) {
+            if (findNextOne) {
+                if (from >= size) {
+                    break;
+                }
+            } else {
+                if (from < start) {
+                    break;
+                }
+            }
+            final int idx = getModelRowIndex(from);
+            if (idx < 0) {
+                return -1;
+            }
+            final LogCatMessage message = modelList.get(idx);
+            if (message == null) {
+                continue;
+            }
+            String msg = message.getMessage();
+            if (msg == null || msg.trim().isEmpty()) {
+                continue;
+            }
+            if (!matchCase) {
+                msg = msg.toLowerCase();
+            }
+            boolean success;
+            if (pattern != null) {
+                success = pattern.matcher(msg).find();
+            } else {
+                success = msg.contains(findingText);
+            }
+            if (success) {
+                return from;
+            }
+            if (findNextOne) {
+                ++from;
+            } else {
+                --from;
+            }
+        }
+        return -1;
     }
 }

@@ -19,6 +19,7 @@ package com.johnsoft.ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -29,6 +30,7 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
@@ -78,6 +80,51 @@ public class LogTableView extends JTable {
 
     public JTextField getMessageFilter() {
         return messageFilter;
+    }
+
+    public void doFindAction(boolean findNextOne, String findingText,
+                             boolean matchCase, boolean regex, JLabel resultDescription) {
+        int row = getSelectedRow();
+        if (row < 0) {
+            row = rowAtPoint(getVisibleRect().getLocation());
+        } else {
+            if (findNextOne) {
+                ++row;
+            } else {
+                --row;
+            }
+        }
+        int idx = ((LogTableModel)getModel()).doFind(row, findNextOne, findingText, matchCase, regex);
+        if (idx < 0 && resultDescription != null) {
+            resultDescription.setText("no matches");
+            return;
+        }
+        selectRow(idx);
+        if (resultDescription != null && ((findNextOne && idx <= row) || (!findNextOne && idx >= row))) {
+            resultDescription.setText("wrapped search");
+        }
+    }
+
+    private void selectRow(int index) {
+        final int rowCount = getRowCount();
+        if (index >= rowCount || index < 0) {
+            return;
+        }
+        final int halfRegion = 10;
+        int up = index - halfRegion;
+        int down = index + halfRegion;
+        if (up < 0) {
+            up = 0;
+        }
+        if (down >= rowCount) {
+            down = rowCount - 1;
+        }
+        final Rectangle upHalf = getCellRect(up, 0, true);
+        final Rectangle downHalf = getCellRect(down, 0, true);
+        Rectangle visible = new Rectangle();
+        Rectangle.union(upHalf, downHalf, visible);
+        scrollRectToVisible(visible);
+        setRowSelectionInterval(index, index);
     }
 
     private void init() {
@@ -205,7 +252,7 @@ public class LogTableView extends JTable {
         public Component getTableCellRendererComponent(JTable table,
                                                        Object value, boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
-            setText(value.toString());
+            setText(String.valueOf(value));
             setLineWrap(true);
             setWrapStyleWord(true);
 
@@ -230,9 +277,9 @@ public class LogTableView extends JTable {
         public Component getTableCellRendererComponent(JTable table,
                                                        Object value, boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
-            setText(value.toString());
-            setVerticalTextPosition(SwingConstants.TOP);
+            setText(String.valueOf(value));
             setVerticalAlignment(SwingConstants.TOP);
+
             applyCellStyle(this, table, value, isSelected, hasFocus, row, column);
             return this;
         }

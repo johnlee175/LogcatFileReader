@@ -16,19 +16,31 @@
  */
 package com.johnsoft.ui;
 
+import java.awt.AWTEvent;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -39,7 +51,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListCellRenderer;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileFilter;
@@ -54,6 +69,7 @@ import com.johnsoft.logcat.LogCatMessageParser3;
  * @version 2016-04-25
  */
 public class Reader {
+    private static final String OS = System.getProperty("os.name").toLowerCase();
     private static final String[] MESSAGES = new String[] {
             "[ 08-11 19:11:07.132   495:0x1ef D/dtag     ]", //$NON-NLS-1$
             "debug message",                                 //$NON-NLS-1$
@@ -71,11 +87,166 @@ public class Reader {
             "debug message",                                 //$NON-NLS-1$
     };
 
+    private static final class DragSupport extends MouseAdapter {
+        private int startX, startY;
+        private Component component;
+
+        public void setTarget(Component component) {
+            this.component = component;
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                startX = e.getXOnScreen();
+                startY = e.getYOnScreen();
+            }
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if (e.getButton() == MouseEvent.BUTTON1 && component != null) {
+                int endX = e.getXOnScreen();
+                int endY = e.getYOnScreen();
+                Point location  = component.getLocationOnScreen();
+                component.setLocation(location.x + (endX - startX), location.y + (endY - startY));
+                startX = endX;
+                startY = endY;
+            }
+        }
+    }
+
     private LogTableModel logTableModel;
+    private LogTableView tableView;
     private JFrame jFrame;
 
+    private void registerFindShotcutAction() {
+        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+            private JDialog dialog;
+            private Component focusableNode;
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if (event.getID() == KeyEvent.KEY_PRESSED) {
+                    KeyEvent keyEvent = (KeyEvent)event;
+                    final int keyCode = keyEvent.getKeyCode();
+                    if (keyCode == KeyEvent.VK_F &&
+                            (OS.startsWith("mac") ? keyEvent.isMetaDown() : keyEvent.isControlDown())) {
+                        if (tableView == null || !tableView.isVisible() || !tableView.isShowing()) {
+                            return;
+                        }
+                        if (dialog != null && dialog.isVisible() && dialog.isShowing()) {
+                            dialog.requestFocus();
+                            if (focusableNode != null) {
+                                focusableNode.requestFocusInWindow();
+                            }
+                            return;
+                        }
+                        dialog = new JDialog(jFrame);
+                        dialog.setUndecorated(true);
+                        dialog.setAlwaysOnTop(true);
+                        final DragSupport dragSupport = new DragSupport();
+                        dragSupport.setTarget(dialog);
+                        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+                        panel.setBackground(Color.WHITE);
+                        panel.addMouseListener(dragSupport);
+                        panel.addMouseMotionListener(dragSupport);
+                        JLabel hand = new JLabel(new ImageIcon(getClass().getResource("/icons/hand.png")));
+                        hand.addMouseListener(dragSupport);
+                        hand.addMouseMotionListener(dragSupport);
+                        JLabel close = new JLabel(new ImageIcon(getClass().getResource("/icons/close.png")));
+                        close.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                focusableNode = null;
+                                dialog.dispose();
+                            }
+                        });
+                        final JTextField text = new JTextField(20);
+                        final JCheckBox matchCase = new JCheckBox("Match Case");
+                        final JCheckBox regex = new JCheckBox("Regex");
+                        focusableNode = text;
+                        final JLabel description = new JLabel("", SwingConstants.CENTER);
+                        description.setPreferredSize(new Dimension(300, 30));
+                        JButton next = new JButton(new ImageIcon(getClass().getResource("/icons/down.png")));
+                        next.setPreferredSize(new Dimension(32, 32));
+                        next.setActionCommand("Next");
+                        next.setBorderPainted(false);
+                        next.setFocusPainted(false);
+                        next.setContentAreaFilled(false);
+                        JButton prev = new JButton(new ImageIcon(getClass().getResource("/icons/up.png")));
+                        prev.setPreferredSize(new Dimension(32, 32));
+                        prev.setActionCommand("Prev");
+                        prev.setBorderPainted(false);
+                        prev.setFocusPainted(false);
+                        prev.setContentAreaFilled(false);
+                        final ActionListener actionListener = new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                final String action = e.getActionCommand();
+                                final boolean findNextOne;
+                                if ("Next".equals(action)) {
+                                    findNextOne = true;
+                                } else if ("Prev".equals(action)) {
+                                    findNextOne = false;
+                                } else {
+                                    System.err.println("Unknown action command!");
+                                    return;
+                                }
+                                String findingText = text.getText();
+                                boolean applyMatchCase = matchCase.isSelected();
+                                boolean applyRegex = regex.isSelected();
+                                if (tableView != null) {
+                                    description.setText("");
+                                    tableView.doFindAction(findNextOne, findingText,
+                                            applyMatchCase, applyRegex, description);
+                                }
+                            }
+                        };
+                        next.addActionListener(actionListener);
+                        prev.addActionListener(actionListener);
+                        text.getActionMap().put(":enter", new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                String findingText = text.getText();
+                                boolean applyMatchCase = matchCase.isSelected();
+                                boolean applyRegex = regex.isSelected();
+                                if (tableView != null) {
+                                    description.setText("");
+                                    tableView.doFindAction(true, findingText,
+                                            applyMatchCase, applyRegex, description);
+                                }
+                            }
+                        });
+                        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), ":enter");
+                        panel.add(hand);
+                        panel.add(text);
+                        panel.add(next);
+                        panel.add(prev);
+                        panel.add(matchCase);
+                        panel.add(regex);
+                        panel.add(description);
+                        panel.add(close);
+                        dialog.setContentPane(panel);
+                        dialog.setSize(panel.getPreferredSize());
+                        Point tableLoc = tableView.getParent().getLocationOnScreen();
+                        if (tableLoc.x >= 0 && tableLoc.y > 0) {
+                            dialog.setLocation(tableLoc);
+                        } else {
+                            dialog.setLocationRelativeTo(null);
+                        }
+                        dialog.setVisible(true);
+                    } else if (keyCode == KeyEvent.VK_ESCAPE &&
+                            (dialog != null && dialog.isVisible() && dialog.isShowing())) {
+                        focusableNode = null;
+                        dialog.dispose();
+                    }
+                }
+            }
+        }, AWTEvent.KEY_EVENT_MASK);
+    }
+
     private void show() {
-        LogTableView tableView = new LogTableView();
+        tableView = new LogTableView();
         logTableModel = (LogTableModel) tableView.getModel();
         JPanel toolbar = new JPanel(new BorderLayout());
         toolbar.add(new JLabel(" Message Filter[e.g. : \"pid:1024 tag:Activ text:Con\"]: "), BorderLayout
@@ -97,6 +268,7 @@ public class Reader {
         jFrame.setMinimumSize(new Dimension(600, 200));
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
+        registerFindShotcutAction();
         synchronized(this) {
             notifyAll();
         }
