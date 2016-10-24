@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -30,13 +31,17 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -99,14 +104,14 @@ public class LogTableView extends JTable {
             resultDescription.setText("no matches");
             return;
         }
-        selectRow(idx);
+        selectRow(this, idx);
         if (resultDescription != null && ((findNextOne && idx <= row) || (!findNextOne && idx >= row))) {
             resultDescription.setText("wrapped search");
         }
     }
 
-    private void selectRow(int index) {
-        final int rowCount = getRowCount();
+    private static void selectRow(JTable table, int index) {
+        final int rowCount = table.getRowCount();
         if (index >= rowCount || index < 0) {
             return;
         }
@@ -119,37 +124,39 @@ public class LogTableView extends JTable {
         if (down >= rowCount) {
             down = rowCount - 1;
         }
-        final Rectangle upHalf = getCellRect(up, 0, true);
-        final Rectangle downHalf = getCellRect(down, 0, true);
+        if (down < up) {
+            return;
+        }
+        final Rectangle upHalf = table.getCellRect(up, 0, true);
+        final Rectangle downHalf = table.getCellRect(down, 0, true);
         Rectangle visible = new Rectangle();
         Rectangle.union(upHalf, downHalf, visible);
-        scrollRectToVisible(visible);
-        setRowSelectionInterval(index, index);
+        table.scrollRectToVisible(visible);
+        table.setRowSelectionInterval(index, index);
     }
 
-    private void init() {
-        setModel(new LogTableModel());
-        setDefaultRenderer(String.class, new SingleLineCellRenderer());
-        setRowSelectionAllowed(true);
-        setColumnSelectionAllowed(false);
-        setFillsViewportHeight(true);
-        setShowHorizontalLines(false);
-        setShowVerticalLines(false);
-        setIntercellSpacing(new Dimension(0, 1));
-        setAutoResizeMode(AUTO_RESIZE_OFF);
-        getTableHeader().setReorderingAllowed(false);
-        configColumn("Level", true, 50);
-        configColumn("Time", true, 150);
-        configColumn("PID", true, 75);
-        configColumn("TID", true, 75);
-        configColumn("Application", true, 75);
-        configColumn("Thread", true, 50);
-        TableColumn textColumn = getColumn("Text");
+    private static void initDefaults(final JTable table) {
+        table.setDefaultRenderer(String.class, new SingleLineCellRenderer());
+        table.setRowSelectionAllowed(true);
+        table.setColumnSelectionAllowed(false);
+        table.setFillsViewportHeight(true);
+        table.setShowHorizontalLines(false);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setAutoResizeMode(AUTO_RESIZE_OFF);
+        table.getTableHeader().setReorderingAllowed(false);
+        configColumn(table, "Level", true, 50);
+        configColumn(table, "Time", true, 150);
+        configColumn(table, "PID", true, 75);
+        configColumn(table, "TID", true, 75);
+        configColumn(table, "Application", true, 75);
+        configColumn(table, "Thread", true, 50);
+        TableColumn textColumn = table.getColumn("Text");
         textColumn.setMinWidth(500);
         textColumn.setPreferredWidth(800);
         textColumn.setCellRenderer(new MultiLineCellRenderer());
 
-        getTableHeader().addMouseListener(new MouseAdapter() {
+        table.getTableHeader().addMouseListener(new MouseAdapter() {
             private final String prefixText = "hide column";
             private final JPopupMenu popupMenu = new JPopupMenu();
             private final JMenuItem hideColumn = popupMenu.add(new JMenuItem(new AbstractAction() {
@@ -160,13 +167,13 @@ public class LogTableView extends JTable {
                         final String identifier = strings[strings.length - 1];
                         if (identifier != null && !identifier.trim().isEmpty()) {
                             // hide column
-                            TableColumnModel columnModel = getColumnModel();
+                            TableColumnModel columnModel = table.getColumnModel();
                             int columnIdx = columnModel.getColumnIndex(identifier);
                             TableColumn column = columnModel.getColumn(columnIdx);
                             column.setPreferredWidth(0);
                             column.setMinWidth(0);
                             column.setMaxWidth(0);
-                            column = getTableHeader().getColumnModel().getColumn(columnIdx);
+                            column = table.getTableHeader().getColumnModel().getColumn(columnIdx);
                             column.setPreferredWidth(0);
                             column.setMinWidth(0);
                             column.setMaxWidth(0);
@@ -177,10 +184,65 @@ public class LogTableView extends JTable {
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON3) {//right click
-                    final int columnIdx = getTableHeader().columnAtPoint(e.getPoint());
-                    final TableColumnModel columnModel = getColumnModel();
+                    final int columnIdx = table.getTableHeader().columnAtPoint(e.getPoint());
+                    final TableColumnModel columnModel = table.getColumnModel();
                     hideColumn.setText(prefixText + " " + columnModel.getColumn(columnIdx).getIdentifier());
-                    popupMenu.show(getTableHeader(), e.getX(), e.getY());
+                    popupMenu.show(table.getTableHeader(), e.getX(), e.getY());
+                }
+            }
+        });
+    }
+
+    private void init() {
+        setModel(new LogTableModel());
+        initDefaults(this);
+
+        addMouseListener(new MouseAdapter() {
+            private final String prefixText = "peek context surround";
+            private final JPopupMenu popupMenu = new JPopupMenu();
+            private final JMenuItem peekContext = popupMenu.add(new JMenuItem(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final LogTableModel.SubLogTableModel subModel =((LogTableModel)getModel()).subView(modelRow, 250);
+                    Window window = (Window) LogTableView.this.getTopLevelAncestor();
+                    if (subModel != null) {
+                        final JTable subTable = new JTable(subModel);
+                        initDefaults(subTable);
+                        JDialog peeContextTip = new JDialog(window, "SubContextView[" + modelRow + "]");
+                        peeContextTip.setContentPane(new JScrollPane(subTable));
+                        peeContextTip.setSize(1000, 500);
+                        peeContextTip.setMinimumSize(new Dimension(600, 200));
+                        peeContextTip.setLocationRelativeTo(null);
+                        peeContextTip.setVisible(true);
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                selectRow(subTable, subModel.getFrom());
+                            }
+                        });
+                    } else {
+                        JOptionPane.showMessageDialog(window, "Can't build sub context view",
+                                "Warning", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            }));
+            private int modelRow;
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() == MouseEvent.BUTTON3) {//right click
+                    int row = getSelectedRow();
+                    if (row < 0) {
+                        row = rowAtPoint(e.getPoint());
+                        if (row < 0) {
+                            return;
+                        }
+                    }
+                    modelRow = ((LogTableModel)getModel()).getModelRowIndex(row);
+                    if (modelRow >= 0) {
+                        peekContext.setText(prefixText + " " + modelRow);
+                        popupMenu.show(LogTableView.this, e.getX(), e.getY());
+                    }
                 }
             }
         });
@@ -239,8 +301,8 @@ public class LogTableView extends JTable {
         }
     }
 
-    private void configColumn(Object identifer, boolean resizable, int preferredWidth) {
-        TableColumn column = getColumn(identifer);
+    private static void configColumn(JTable table, Object identifer, boolean resizable, int preferredWidth) {
+        TableColumn column = table.getColumn(identifer);
         column.setResizable(resizable);
         column.setPreferredWidth(preferredWidth);
     }
@@ -293,7 +355,7 @@ public class LogTableView extends JTable {
             component.setForeground(table.getSelectionForeground());
         } else {
             component.setBackground(table.getBackground());
-            String level = ((LogTableModel)table.getModel()).getLogLevel(row);
+            String level = ((CommonModel)table.getModel()).getLogLevel(row);
             if ("E".equals(level)) {
                 component.setForeground(ERROR_COLOR);
             } else if ("W".equals(level)) {
@@ -308,6 +370,10 @@ public class LogTableView extends JTable {
                 component.setForeground(VERBOSE_COLOR);
             }
         }
+    }
+
+    public interface CommonModel {
+        String getLogLevel(int row);
     }
 }
 

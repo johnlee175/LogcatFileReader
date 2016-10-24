@@ -36,12 +36,15 @@ import com.johnsoft.logcat.LogicalPredicate;
  * @author John Kenrinus Lee
  * @version 2016-04-25
  */
-public final class LogTableModel extends AbstractTableModel {
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledFuture<?> scheduledFuture;
-    private final String[] columnHeaders = new String[] {
+public final class LogTableModel extends AbstractTableModel implements LogTableView.CommonModel {
+    private static final String[] COLUMN_HEADERS = new String[] {
             "Level", "Time", "PID", "TID", "Application", "Thread", "Tag", "Text"
     };
+    private static final int COLUMN_COUNT = COLUMN_HEADERS.length;
+
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture<?> scheduledFuture;
+
     /** should not update it except from setDataSource(List) */
     private List<LogCatMessage> modelList = new ArrayList<>();
     /** should not update it except from setDataSource(List) */
@@ -122,12 +125,6 @@ public final class LogTableModel extends AbstractTableModel {
         }, 800L, TimeUnit.MILLISECONDS);
     }
 
-    public final String getLogLevel(int row) {
-        final LogCatMessage message;
-        message = modelList.get(getModelRowIndex(row));
-        return String.valueOf(message.getLogLevel().getPriorityLetter());
-    }
-
     public final int getModelRowIndex(int row) {
         synchronized (LogTableModel.this) {
             return viewList == null ? -1 : viewList.get(row);
@@ -135,8 +132,15 @@ public final class LogTableModel extends AbstractTableModel {
     }
 
     @Override
+    public final String getLogLevel(int row) {
+        final LogCatMessage message;
+        message = modelList.get(getModelRowIndex(row));
+        return String.valueOf(message.getLogLevel().getPriorityLetter());
+    }
+
+    @Override
     public String getColumnName(int column) {
-        return columnHeaders[column];
+        return COLUMN_HEADERS[column];
     }
 
     @Override
@@ -158,39 +162,15 @@ public final class LogTableModel extends AbstractTableModel {
 
     @Override
     public int getColumnCount() {
-        return columnHeaders.length;
+        return COLUMN_COUNT;
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         if (rowIndex >= getRowCount()) {
-            return null;
-        }
-        final LogCatMessage message;
-        message = modelList.get(getModelRowIndex(rowIndex));
-        if (message.isOnlyBody() && columnIndex != 7) {
             return "";
         }
-        switch (columnIndex) {
-            case 0:
-                return message.getLogLevel().getPriorityLetter();
-            case 1:
-                return message.getTime();
-            case 2:
-                return message.getPid();
-            case 3:
-                return message.getTid();
-            case 4:
-                return message.getAppName();
-            case 5:
-                return message.getThreadName();
-            case 6:
-                return message.getTag();
-            case 7:
-                return message.getMessage();
-            default:
-                return null;
-        }
+        return valueAt(modelList.get(getModelRowIndex(rowIndex)), columnIndex);
     }
 
     public final int doFind(int from, boolean findNextOne, String findingText, boolean matchCase, boolean regex) {
@@ -268,5 +248,113 @@ public final class LogTableModel extends AbstractTableModel {
             }
         }
         return -1;
+    }
+
+    public final SubLogTableModel subView(int modelRow, int halfRegion) {
+        final int rowCount = modelSize;
+        if (modelRow >= rowCount || modelRow < 0) {
+            return null;
+        }
+        int up = modelRow - halfRegion;
+        int down = modelRow + halfRegion;
+        if (up < 0) {
+            up = 0;
+        }
+        if (down >= rowCount) {
+            down = rowCount - 1;
+        }
+        if (down < up) {
+            return null;
+        }
+        ArrayList<LogCatMessage> subList = new ArrayList<>(down - up + 2);
+        for (int i = up; i <= down; ++i) {
+            subList.add(modelList.get(i));
+        }
+        return new SubLogTableModel(subList, (modelRow - up));
+    }
+
+    public static final class SubLogTableModel extends AbstractTableModel implements LogTableView.CommonModel {
+        private final List<LogCatMessage> modelList;
+        private final int modelSize;
+        private final int from;
+
+        public SubLogTableModel(List<LogCatMessage> list, int from) {
+            this.modelList = Collections.unmodifiableList(list);
+            this.modelSize = modelList.size();
+            this.from = from;
+        }
+
+        public int getFrom() {
+            return from;
+        }
+
+        @Override
+        public final String getLogLevel(int row) {
+            final LogCatMessage message;
+            message = modelList.get(row);
+            return String.valueOf(message.getLogLevel().getPriorityLetter());
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return COLUMN_HEADERS[column];
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return String.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return false;
+        }
+
+        @Override
+        public int getRowCount() {
+            return modelSize;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return COLUMN_COUNT;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            if (rowIndex >= getRowCount()) {
+                return "";
+            }
+            return LogTableModel.valueAt(modelList.get(rowIndex), columnIndex);
+        }
+    }
+
+    private static Object valueAt(LogCatMessage message, int columnIndex) {
+        if (message == null) {
+            return "";
+        }
+        if (message.isOnlyBody() && columnIndex != 7) {
+            return "";
+        }
+        switch (columnIndex) {
+            case 0:
+                return message.getLogLevel().getPriorityLetter();
+            case 1:
+                return message.getTime();
+            case 2:
+                return message.getPid();
+            case 3:
+                return message.getTid();
+            case 4:
+                return message.getAppName();
+            case 5:
+                return message.getThreadName();
+            case 6:
+                return message.getTag();
+            case 7:
+                return message.getMessage();
+            default:
+                return "";
+        }
     }
 }
