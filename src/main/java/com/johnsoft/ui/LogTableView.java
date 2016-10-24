@@ -22,6 +22,7 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
@@ -48,6 +49,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 
 import com.johnsoft.logcat.LogCatFilter;
 import com.johnsoft.logcat.LogLevel;
@@ -68,6 +71,7 @@ public class LogTableView extends JTable {
     private JComboBox<LogLevel> levelSelector;
     private JComboBox<LogicalPredicate> logicalSelector;
     private JTextField messageFilter;
+    private JTextField gotoLine;
 
     public LogTableView() {
         init();
@@ -85,6 +89,10 @@ public class LogTableView extends JTable {
 
     public JTextField getMessageFilter() {
         return messageFilter;
+    }
+
+    public JTextField getGotoLine() {
+        return gotoLine;
     }
 
     public void doFindAction(boolean findNextOne, String findingText,
@@ -288,6 +296,65 @@ public class LogTableView extends JTable {
             @Override
             public void changedUpdate(DocumentEvent e) {
                 System.out.println("changedUpdate");
+            }
+        });
+        gotoLine = new JTextField(4);
+        gotoLine.enableInputMethods(false);
+        gotoLine.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String text = gotoLine.getText();
+                try {
+                    int number = Integer.parseInt(text);
+                    selectRow(LogTableView.this, number);
+                } catch (NumberFormatException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        gotoLine.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                if (gotoLine.getText().isEmpty()) {
+                    return;
+                }
+                final int offset = e.getOffset();
+                final int len = e.getLength();
+                if (!gotoLine.getText().matches("^[0-9]*[1-9][0-9]*$")) {
+                    clear(offset, len);
+                }
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (gotoLine.getText().isEmpty()) {
+                    return;
+                }
+                final int offset = e.getOffset();
+                final int len = e.getLength();
+                if (!gotoLine.getText().matches("^[0-9]*[1-9][0-9]*$")) {
+                    clear(offset, len);
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                System.out.println("changedUpdate");
+            }
+
+            private void clear(final int offset, final int len) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            final Document document = gotoLine.getDocument();
+                            final int length = document.getLength();
+                            document.remove(Math.max(0, offset), Math.min(len, length));
+                        } catch (BadLocationException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
             }
         });
     }

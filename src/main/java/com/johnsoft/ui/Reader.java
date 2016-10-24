@@ -255,6 +255,7 @@ public class Reader {
         JPanel selectors = new JPanel(new FlowLayout());
         selectors.add(tableView.getLogicalSelector());
         selectors.add(tableView.getLevelSelector());
+        selectors.add(tableView.getGotoLine());
         toolbar.add(selectors, BorderLayout.EAST);
         JPanel jPanel = new JPanel(new BorderLayout());
         JScrollPane jScrollPane = new JScrollPane(tableView);
