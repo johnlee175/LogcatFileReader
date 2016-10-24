@@ -31,7 +31,7 @@ import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
 /**
- * 构建类似JTextField, 不换行的JTextPane
+ * A JTextPane like JTextField, no line wrap
  * @author John Kenrinus Lee
  * @version 2016-10-21
  */
