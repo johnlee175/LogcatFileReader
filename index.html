@@ -6,10 +6,11 @@
     <title>Logcatfilereader by johnlee175</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/github-dark.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>-->
+    <script src="http://libs.baidu.com/jquery/1.7.1/jquery.min.js"></script>
     <script src="javascripts/main.js"></script>
     <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
@@ -40,14 +41,17 @@
       </nav>
       <section>
           <p>You can run jar with command <strong>"java -jar LogcatFileReader-{version}.jar"</strong>, <br/>
-            make sure the java binary is in your $PATH environment variable, and you type the command under the directory which contains LogcatFileReader-xxx.jar.</p>
+            make sure the java binary is in your $PATH environment variable, and you type the command under the directory
+            which contains LogcatFileReader-xxx.jar.</p>
           <p>Then you will see the following dialog which indicate you to select log file you want view and choose log text format:</p>
           <img src="./images/open_file_dialog.png" /><br/><br/>
 
-          <p>If don't like some blank column which no content, you can right click the table header and select the popup menu item which named "hide column ...", like that:</p>
+          <p>If don't like some blank column which no content, you can right click the table header
+             and select the popup menu item which named "hide column ...", like that:</p>
           <img src="./images/hide_column.png" /><br/><br/>
 
-          <p>You can just type some text which you want to search from message, and it will work with regex, or we call it ignore case.
+          <p>You can just type some text which you want to search from message, and it will work with regex,
+             or we call it ignore case.
           </p>
           <p><strong>Notice: you type "pre" is same as "Pre" and "text:Pre"</strong></p>
           <img src="./images/text_search.png" /><br/><br/>
@@ -63,8 +67,8 @@
           <p>This is a example search with one tag or another tag: </p>
           <img src="./images/tag_or_tag.png" /><br/><br/>
 
-          <p>This is a example search with one tag and one text, you can test search with one text and another text(using "text:"), that will be good: 
-          </p>
+          <p>This is a example search with one tag and one text, you can test search with one text
+              and another text(using "text:"), that will be good: </p>
           <img src="./images/tag_and_text.png" /><br/><br/>
 
           <p>This is a example search with one tag or one text, you can test search with one text or another text: 
@@ -74,18 +78,42 @@
           <p>You also can filter with log level, like logcat: </p>
           <img src="./images/with_log_level_filter.png" /><br/><br/>
 
+          <p>You can type &lt;Ctrl-F&gt; or &lt;Command-F&gt; to request Find action. It will show Find Window,
+          which can drag anywhere, find next matched word, find previous matched word. You also can indicate whether
+          match case or apply regex or not when search word. If you type &lt;ESC&gt; or click the close button,
+          will exit Find action.</p>
+          <img src="./images/find.png" /><br/><br/>
+
+          <p>In the filtered table, you may not see the context logs of someone line log, if you select the row of log,
+          and right click, and select "peek context surround {line number}" menu item, now the multi-logs before and
+          after this line will be showing for you.</p>
+          <img src="./images/show_context.png" /><br/>
+          <img src="./images/subview.png" /><br/>
+          <br/>
+
+          <p>Now, through the text box on the top right corner of the interface, you can navigate to the specified
+          row. All you need is, in the filtered table, select a log, right-click to view the line number, remove the
+          filter options, input line number in the text box, and press &lt;ENTER&gt;, the application will immediately
+          jump to the line</p>
+          <img src="./images/gotoline.png" /><br/><br/>
+
           <hr/><br/>
 
           <h4>Point</h4>
           <ul>
-            <li>You can indicate log file and format with command argument: <br/><strong>"java -jar LogcatFileReader-{version}.jar {log-file-full-path} {log-file-text-format}"</strong><br/> The support format include: long(default, generate from "adb logcat -v long"), threadtime, javacustom.</li><br/>
-            <li>The log file should smaller than 200MB, because of open UI too slow, and log file should named end with ".log".</li><br/>
+            <li>You can indicate log file and format with command argument: <br/>
+                <strong>"java -jar LogcatFileReader-{version}.jar {log-file-full-path} {log-file-text-format}"</strong>
+                <br/> The support format include: long(default, generate from "adb logcat -v long"), threadtime, javacustom.
+            </li><br/>
+            <li>The log file should smaller than 200MB, because of open UI too slow,
+                and log file should named end with ".log".</li><br/>
           </ul>
 
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/johnlee175">johnlee175</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a>
+        </small></p>
       </footer>
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
