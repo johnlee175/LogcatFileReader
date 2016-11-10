@@ -18,8 +18,9 @@ package com.johnsoft.logcat;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -76,7 +77,7 @@ public class LogCatMessageParser {
         final List<LogCatMessage> messages = new ArrayList<>();
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(logFile));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), "UTF-8"));
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isEmpty()) {
