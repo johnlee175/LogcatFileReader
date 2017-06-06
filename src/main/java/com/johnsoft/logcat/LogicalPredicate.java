@@ -23,4 +23,4 @@ package com.johnsoft.logcat;
  */
 public enum LogicalPredicate {
         AND, OR
-    }
+}
