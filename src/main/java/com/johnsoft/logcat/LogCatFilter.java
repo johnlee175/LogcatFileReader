@@ -27,24 +27,31 @@ import java.util.regex.PatternSyntaxException;
  * a message matches the filter's settings.
  */
 public final class LogCatFilter {
-    private static final String PID_KEYWORD = "pid:";   //$NON-NLS-1$
-    private static final String APP_KEYWORD = "app:";   //$NON-NLS-1$
-    private static final String TAG_KEYWORD = "tag:";   //$NON-NLS-1$
-    private static final String TEXT_KEYWORD = "text:"; //$NON-NLS-1$
+    private static final String PID_KEYWORD = "pid:";
+    private static final String TID_KEYWORD = "tid:";
+    private static final String APP_KEYWORD = "app:";
+    private static final String THREAD_KEYWORD = "thread:";
+    private static final String TAG_KEYWORD = "tag:";
+    private static final String TEXT_KEYWORD = "text:";
 
     private final String mName;
     private final String mTag;
     private final String mText;
     private final String mPid;
+    private final String mTid;
     private final String mAppName;
+    private final String mThreadName;
     private final LogLevel mLogLevel;
 
     private boolean mCheckPid;
+    private boolean mCheckTid;
     private boolean mCheckAppName;
+    private boolean mCheckThreadName;
     private boolean mCheckTag;
     private boolean mCheckText;
 
     private Pattern mAppNamePattern;
+    private Pattern mThreadNamePattern;
     private Pattern mTagPattern;
     private Pattern mTextPattern;
 
@@ -61,15 +68,18 @@ public final class LogCatFilter {
      *                 higher priority will be accepted by the filter.
      */
     public LogCatFilter(String name, String tag, String text,
-                        String pid, String appName, LogLevel logLevel) {
+                        String pid, String tid, String appName, String threadName, LogLevel logLevel) {
         mName = name.trim();
         mTag = tag.trim();
         mText = text.trim();
         mPid = pid.trim();
+        mTid = tid.trim();
         mAppName = appName.trim();
+        mThreadName = threadName.trim();
         mLogLevel = logLevel;
 
         mCheckPid = !mPid.isEmpty();
+        mCheckTid = !mTid.isEmpty();
 
         if (!mAppName.isEmpty()) {
             try {
@@ -77,6 +87,15 @@ public final class LogCatFilter {
                 mCheckAppName = true;
             } catch (PatternSyntaxException e) {
                 mCheckAppName = false;
+            }
+        }
+
+        if (!mThreadName.isEmpty()) {
+            try {
+                mThreadNamePattern = Pattern.compile(mThreadName, getPatternCompileFlags(mThreadName));
+                mCheckThreadName = true;
+            } catch (PatternSyntaxException e) {
+                mCheckThreadName = false;
             }
         }
 
@@ -134,12 +153,18 @@ public final class LogCatFilter {
             String tag = "";
             String text = "";
             String pid = "";
+            String tid = "";
             String app = "";
+            String thread = "";
 
             if (s.startsWith(PID_KEYWORD)) {
                 pid = s.substring(PID_KEYWORD.length());
+            } else if (s.startsWith(TID_KEYWORD)) {
+                tid = s.substring(TID_KEYWORD.length());
             } else if (s.startsWith(APP_KEYWORD)) {
                 app = s.substring(APP_KEYWORD.length());
+            } else if (s.startsWith(THREAD_KEYWORD)) {
+                thread = s.substring(THREAD_KEYWORD.length());
             } else if (s.startsWith(TAG_KEYWORD)) {
                 tag = s.substring(TAG_KEYWORD.length());
             } else {
@@ -150,7 +175,7 @@ public final class LogCatFilter {
                 }
             }
             filterSettings.add(new LogCatFilter("livefilter-" + s,
-                    tag, text, pid, app, minLevel));
+                    tag, text, pid, tid, app, thread, minLevel));
         }
 
         return filterSettings;
@@ -172,8 +197,16 @@ public final class LogCatFilter {
         return mPid;
     }
 
+    public String getTid() {
+        return mTid;
+    }
+
     public String getAppName() {
         return mAppName;
+    }
+
+    public String getThreadName() {
+        return mThreadName;
     }
 
     public LogLevel getLogLevel() {
@@ -199,9 +232,23 @@ public final class LogCatFilter {
             return false;
         }
 
+        /* if tid filter is enabled, filter out messages whose tid does not match
+         * the filter's tid */
+        if (mCheckTid && !m.getTid().equals(mTid)) {
+            return false;
+        }
+
         /* if app name filter is enabled, filter out messages not matching the app name */
         if (mCheckAppName) {
             Matcher matcher = mAppNamePattern.matcher(m.getAppName());
+            if (!matcher.find()) {
+                return false;
+            }
+        }
+
+        /* if thread name filter is enabled, filter out messages not matching the thread name */
+        if (mCheckThreadName) {
+            Matcher matcher = mThreadNamePattern.matcher(m.getThreadName());
             if (!matcher.find()) {
                 return false;
             }

@@ -26,45 +26,31 @@ import java.util.regex.Pattern;
  * @version 2016-04-26
  */
 public class LogCatMessageParser3 extends LogCatMessageParser {
-    //PatternLayout: [%d{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%-5level]%logger{50} - %msg%n
-    //Example: [2016-03-15 13:35:05.503][main][WARN ]MyTag - this is message body
+    // 06-02 15:41:27.925 2669 3761 W System.err: [10062][Verbal-Engine] onEvent called
+    // 06-03 08:28:38.589 5451 5451 I BootReceiver: [10062][main] onReceive called
+    // %date{MM-dd HH:mm:ss.SSS} %pid %tid %level{1} %tag{48}: [%uid][%thread] %msg
     private static final Pattern sLogHeaderPattern = Pattern.compile(
-            "^\\[(\\d\\d\\d\\d-\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)\\]"
-                    + "\\[(.*)\\]\\[(\\w{4}.)\\](.*?)\\s-\\s(.*)");
+            "^(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+([VDIWEAF])\\s+(.*?):" +
+                    "\\s+\\[(\\d+)\\]\\[(.*?)\\](.*)");
 
     @Override
     protected void processLogLine(String line, List<LogCatMessage> messages) {
         final Matcher matcher = sLogHeaderPattern.matcher(line);
         if (matcher.matches()) {
-            final LogLevel currLogLevel;
-            switch (matcher.group(3).trim()) {
-                case "TRACE":
-                    currLogLevel = LogLevel.VERBOSE;
-                    break;
-                case "DEBUG":
-                    currLogLevel = LogLevel.DEBUG;
-                    break;
-                case "INFO":
-                    currLogLevel = LogLevel.INFO;
-                    break;
-                case "WARN":
-                    currLogLevel = LogLevel.WARN;
-                    break;
-                case "ERROR":
-                    currLogLevel = LogLevel.ERROR;
-                    break;
-                default:
-                    currLogLevel = LogLevel.ASSERT;
-                    break;
+             /* LogLevel doesn't support messages with severity "F". Log.wtf() is supposed
+             * to generate "A", but generates "F". */
+            LogLevel currLogLevel = LogLevel.getByLetterString(matcher.group(4));
+            if (currLogLevel == null && matcher.group(4).equals("F")) {
+                currLogLevel = LogLevel.ASSERT;
             }
             boolean flag = false;
-            for (String txtMsg : splitTextWithFixLength(matcher.group(5), DEFAULT_LIMIT)) {
+            for (String txtMsg : splitTextWithFixLength(matcher.group(8), DEFAULT_LIMIT)) {
                 messages.add(new LogCatMessage(currLogLevel,
-                        ""/*currPid*/,
-                        ""/*currTid*/,
-                        ""/*pkgName*/,
-                        matcher.group(2)/*threadName*/,
-                        matcher.group(4)/*currTag*/,
+                        matcher.group(2)/*currPid*/,
+                        matcher.group(3)/*currTid*/,
+                        matcher.group(6)/*pkgName, use uid instead*/,
+                        matcher.group(7)/*threadName*/,
+                        matcher.group(5)/*currTag*/,
                         matcher.group(1)/*currTime*/,
                         txtMsg/*currMsg*/,
                         flag/*onlyBody*/));
