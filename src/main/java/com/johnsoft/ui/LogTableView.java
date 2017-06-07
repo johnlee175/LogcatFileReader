@@ -16,45 +16,21 @@
  */
 package com.johnsoft.ui;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.List;
+import com.johnsoft.logcat.LogCatFilter;
+import com.johnsoft.logcat.LogLevel;
+import com.johnsoft.logcat.LogicalPredicate;
 
-import javax.swing.AbstractAction;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
-
-import com.johnsoft.logcat.LogCatFilter;
-import com.johnsoft.logcat.LogLevel;
-import com.johnsoft.logcat.LogicalPredicate;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
 
 /**
  * @author John Kenrinus Lee
@@ -152,17 +128,9 @@ public class LogTableView extends JTable {
         table.setShowVerticalLines(false);
         table.setIntercellSpacing(new Dimension(0, 1));
         table.setAutoResizeMode(AUTO_RESIZE_OFF);
+        table.setAutoscrolls(true);
+        table.setRowHeight(calcRowHeight(table));
         table.getTableHeader().setReorderingAllowed(false);
-        configColumn(table, "Level", true, 50);
-        configColumn(table, "Time", true, 150);
-        configColumn(table, "PID", true, 75);
-        configColumn(table, "TID", true, 75);
-        configColumn(table, "Application", true, 75);
-        configColumn(table, "Thread", true, 50);
-        TableColumn textColumn = table.getColumn("Text");
-        textColumn.setMinWidth(500);
-        textColumn.setPreferredWidth(800);
-        textColumn.setCellRenderer(new MultiLineCellRenderer());
 
         table.getTableHeader().addMouseListener(new MouseAdapter() {
             private final String prefixText = "hide column";
@@ -199,6 +167,15 @@ public class LogTableView extends JTable {
                 }
             }
         });
+    }
+
+    private static int calcRowHeight(JTable table) {
+        final Font font = table.getFont();
+        final FontMetrics fm = table.getFontMetrics(font);
+        final int ascent = fm.getAscent();
+        final int descent = fm.getDescent();
+        final int margin = font.getSize() / 2;
+        return ascent + descent + margin;
     }
 
     private void init() {
@@ -368,37 +345,6 @@ public class LogTableView extends JTable {
         }
     }
 
-    private static void configColumn(JTable table, Object identifer, boolean resizable, int preferredWidth) {
-        TableColumn column = table.getColumn(identifer);
-        column.setResizable(resizable);
-        column.setPreferredWidth(preferredWidth);
-    }
-
-    private static class MultiLineCellRenderer extends JTextArea implements TableCellRenderer {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table,
-                                                       Object value, boolean isSelected, boolean hasFocus,
-                                                       int row, int column) {
-            setText(String.valueOf(value));
-            setLineWrap(true);
-            setWrapStyleWord(true);
-
-            int maxPreferredHeight = 20;
-            for (int i = 0; i < table.getColumnCount(); i++) {
-                setSize(table.getColumnModel().getColumn(column).getWidth(), 0);
-                maxPreferredHeight = Math.max(maxPreferredHeight, getPreferredSize().height);
-            }
-            if (table.getRowHeight(row) != maxPreferredHeight) {
-                table.setRowHeight(row, maxPreferredHeight);
-            }
-
-            applyCellStyle(this, table, value, isSelected, hasFocus, row, column);
-            return this;
-        }
-    }
-
     private static class SingleLineCellRenderer extends DefaultTableCellRenderer {
         private static final long serialVersionUID = 1L;
 
@@ -410,6 +356,13 @@ public class LogTableView extends JTable {
             setVerticalAlignment(SwingConstants.TOP);
 
             applyCellStyle(this, table, value, isSelected, hasFocus, row, column);
+
+//            final int width = table.getFontMetrics(table.getFont()).stringWidth(String.valueOf(value));
+            final int width = getPreferredSize().width;
+            final TableColumn tc = table.getColumnModel().getColumn(column);
+            if (width > tc.getWidth()) {
+                tc.setPreferredWidth(width);
+            }
             return this;
         }
     }

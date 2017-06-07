@@ -29,48 +29,32 @@ public class LogCatMessageParser3 extends LogCatMessageParser {
     // 06-02 15:41:27.925 2669 3761 W System.err: [10062][Verbal-Engine] onEvent called
     // 06-03 08:28:38.589 5451 5451 I BootReceiver: [10062][main] onReceive called
     // %date{MM-dd HH:mm:ss.SSS} %pid %tid %level{1} %tag{48}: [%uid][%thread] %msg
-    private static final Pattern sLogHeaderPattern = Pattern.compile(
-            "^(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+([VDIWEAF])\\s+(.*?):" +
-                    "\\s+\\[(\\d+)\\]\\[(.*?)\\](.*)");
+    private static final Pattern sLogPattern = Pattern.compile(
+            "^((\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)\\s+(\\d+)\\s+(\\d+)\\s+([VDIWEAF])\\s+(.*?):" +
+                    "\\s+\\[(\\d+)\\]\\[(.*?)\\])(.*)");
 
     @Override
     protected void processLogLine(String line, List<LogCatMessage> messages) {
-        final Matcher matcher = sLogHeaderPattern.matcher(line);
+        final Matcher matcher = sLogPattern.matcher(line);
         if (matcher.matches()) {
              /* LogLevel doesn't support messages with severity "F". Log.wtf() is supposed
              * to generate "A", but generates "F". */
-            LogLevel currLogLevel = LogLevel.getByLetterString(matcher.group(4));
-            if (currLogLevel == null && matcher.group(4).equals("F")) {
+            LogLevel currLogLevel = LogLevel.getByLetterString(matcher.group(5));
+            if (currLogLevel == null && matcher.group(5).equals("F")) {
                 currLogLevel = LogLevel.ASSERT;
             }
-            boolean flag = false;
-            for (String txtMsg : splitTextWithFixLength(matcher.group(8), DEFAULT_LIMIT)) {
-                messages.add(new LogCatMessage(currLogLevel,
-                        matcher.group(2)/*currPid*/,
-                        matcher.group(3)/*currTid*/,
-                        matcher.group(6)/*pkgName, use uid instead*/,
-                        matcher.group(7)/*threadName*/,
-                        matcher.group(5)/*currTag*/,
-                        matcher.group(1)/*currTime*/,
-                        txtMsg/*currMsg*/,
-                        flag/*onlyBody*/));
-                if (!flag) {
-                    flag = true;
-                }
-            }
+
+            messages.add(new LogCatMessage(currLogLevel,
+                    matcher.group(3)/*currPid*/,
+                    matcher.group(4)/*currTid*/,
+                    matcher.group(7)/*pkgName, use uid instead*/,
+                    matcher.group(8)/*threadName*/,
+                    matcher.group(6)/*currTag*/,
+                    matcher.group(2)/*currTime*/,
+                    matcher.group(9)/*currMsg*/,
+                    matcher.group(1)/*commonHeader*/));
         } else {
-            if (!messages.isEmpty()) {
-                final LogCatMessage m = messages.get(messages.size() - 1);
-                messages.add(new LogCatMessage(m.getLogLevel(),
-                        m.getPid(),
-                        m.getTid(),
-                        m.getAppName(),
-                        m.getThreadName(),
-                        m.getTag(),
-                        m.getTime(),
-                        line,
-                        false));
-            }
+            followLastMessage(line, messages);
         }
     }
 }

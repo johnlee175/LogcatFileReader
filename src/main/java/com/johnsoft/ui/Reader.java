@@ -16,10 +16,7 @@
  */
 package com.johnsoft.ui;
 
-import com.johnsoft.logcat.LogCatMessage;
-import com.johnsoft.logcat.LogCatMessageParser;
-import com.johnsoft.logcat.LogCatMessageParser2;
-import com.johnsoft.logcat.LogCatMessageParser3;
+import com.johnsoft.logcat.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -231,6 +228,7 @@ public class Reader {
         toolbar.add(selectors, BorderLayout.EAST);
         JPanel jPanel = new JPanel(new BorderLayout());
         JScrollPane jScrollPane = new JScrollPane(tableView);
+        jScrollPane.getHorizontalScrollBar().setUnitIncrement(10);
         jPanel.add(jScrollPane, BorderLayout.CENTER);
         jPanel.add(toolbar, BorderLayout.NORTH);
         jFrame = new JFrame("LogcatFileReader[loading...]");
@@ -305,7 +303,7 @@ public class Reader {
                     e.printStackTrace();
                 }
 
-                parser = new LogCatMessageParser(); //default: -v long
+                parser = new LogCatMessageParser1(); //default: -v long
                 if (args.length > 0) {
                     logFile = new File(args[0]);
                     if (!logFile.exists() || !logFile.isFile() || !logFile.canRead()) {

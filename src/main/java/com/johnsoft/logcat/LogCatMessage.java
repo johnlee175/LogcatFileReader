@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.johnsoft.logcat;
 
 /**
@@ -31,14 +30,14 @@ public final class LogCatMessage {
     private final String mTag;
     private final String mTime;
     private final String mMessage;
-    private final boolean mOnlyBody; //if false, will just show mMessage;
+    private final String mCommonHeader;
 
     /**
      * Construct an immutable log message object.
      */
     public LogCatMessage(LogLevel logLevel, String pid, String tid,
                          String appName, String threadName, String tag,
-                         String time, String msg, boolean onlyBody) {
+                         String time, String msg, String commonHeader) {
         mLogLevel = logLevel;
         mPid = pid;
         mAppName = appName;
@@ -46,7 +45,7 @@ public final class LogCatMessage {
         mTag = tag;
         mTime = time;
         mMessage = msg;
-        mOnlyBody = onlyBody;
+        mCommonHeader = commonHeader;
 
         try {
             // Thread id's may be in hex on some platforms.
@@ -90,16 +89,22 @@ public final class LogCatMessage {
         return mMessage;
     }
 
-    public boolean isOnlyBody() {
-        return mOnlyBody;
+    public String getCommonHeader() {
+        return mCommonHeader;
     }
 
     @Override
     public String toString() {
-        return mTime + ": "
-                + mLogLevel.getPriorityLetter() + "/"
-                + mTag + "("
-                + mPid + "): "
-                + mMessage;
+        return "LogCatMessage{" +
+                "mLogLevel=" + mLogLevel +
+                ", mPid='" + mPid + '\'' +
+                ", mTid='" + mTid + '\'' +
+                ", mAppName='" + mAppName + '\'' +
+                ", mThreadName='" + mThreadName + '\'' +
+                ", mTag='" + mTag + '\'' +
+                ", mTime='" + mTime + '\'' +
+                ", mMessage='" + mMessage + '\'' +
+                ", mCommonHeader='" + mCommonHeader + '\'' +
+                '}';
     }
 }

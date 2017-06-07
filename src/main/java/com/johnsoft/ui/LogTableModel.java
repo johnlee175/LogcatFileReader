@@ -16,6 +16,12 @@
  */
 package com.johnsoft.ui;
 
+import com.johnsoft.logcat.LogCatFilter;
+import com.johnsoft.logcat.LogCatMessage;
+import com.johnsoft.logcat.LogicalPredicate;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,23 +31,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import javax.swing.SwingUtilities;
-import javax.swing.table.AbstractTableModel;
-
-import com.johnsoft.logcat.LogCatFilter;
-import com.johnsoft.logcat.LogCatMessage;
-import com.johnsoft.logcat.LogicalPredicate;
-
 /**
  * @author John Kenrinus Lee
  * @version 2016-04-25
  */
 public final class LogTableModel extends AbstractTableModel implements LogTableView.CommonModel {
-    private static final String[] COLUMN_HEADERS = new String[] {
-            "Level", "Time", "PID", "TID", "Application", "Thread", "Tag", "Text"
-    };
-    private static final int COLUMN_COUNT = COLUMN_HEADERS.length;
-
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> scheduledFuture;
 
@@ -140,7 +134,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
 
     @Override
     public String getColumnName(int column) {
-        return COLUMN_HEADERS[column];
+        return "";
     }
 
     @Override
@@ -162,7 +156,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
 
     @Override
     public int getColumnCount() {
-        return COLUMN_COUNT;
+        return 1;
     }
 
     @Override
@@ -170,7 +164,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
         if (rowIndex >= getRowCount()) {
             return "";
         }
-        return valueAt(modelList.get(getModelRowIndex(rowIndex)), columnIndex);
+        return valueAt(modelList.get(getModelRowIndex(rowIndex)));
     }
 
     public final int doFind(int from, boolean findNextOne, String findingText, boolean matchCase, boolean regex) {
@@ -225,7 +219,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
             if (message == null) {
                 continue;
             }
-            String msg = message.getMessage();
+            String msg = valueAt(message);
             if (msg == null || msg.trim().isEmpty()) {
                 continue;
             }
@@ -297,7 +291,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
 
         @Override
         public String getColumnName(int column) {
-            return COLUMN_HEADERS[column];
+            return "";
         }
 
         @Override
@@ -317,7 +311,7 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
 
         @Override
         public int getColumnCount() {
-            return COLUMN_COUNT;
+            return 1;
         }
 
         @Override
@@ -325,36 +319,14 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
             if (rowIndex >= getRowCount()) {
                 return "";
             }
-            return LogTableModel.valueAt(modelList.get(rowIndex), columnIndex);
+            return LogTableModel.valueAt(modelList.get(rowIndex));
         }
     }
 
-    private static Object valueAt(LogCatMessage message, int columnIndex) {
+    private static String valueAt(LogCatMessage message) {
         if (message == null) {
             return "";
         }
-        if (message.isOnlyBody() && columnIndex != 7) {
-            return "";
-        }
-        switch (columnIndex) {
-            case 0:
-                return message.getLogLevel().getPriorityLetter();
-            case 1:
-                return message.getTime();
-            case 2:
-                return message.getPid();
-            case 3:
-                return message.getTid();
-            case 4:
-                return message.getAppName();
-            case 5:
-                return message.getThreadName();
-            case 6:
-                return message.getTag();
-            case 7:
-                return message.getMessage();
-            default:
-                return "";
-        }
+        return message.getCommonHeader() + message.getMessage();
     }
 }

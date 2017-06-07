@@ -52,7 +52,7 @@ def compare_file_index(a, b):
 
 
 def show_log(log_path):
-    cmd = 'java -jar LogcatFileReader-1.0.0.jar ' + log_path + ' threadtime'
+    cmd = 'java -jar LogcatFileReader-2.0.0.jar ' + log_path + ' threadtime'
     print 'exec ' + cmd
     os.system(cmd)
 
