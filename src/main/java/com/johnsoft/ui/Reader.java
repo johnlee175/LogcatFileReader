@@ -231,6 +231,7 @@ public class Reader {
         toolbar.add(selectors, BorderLayout.EAST);
         JPanel jPanel = new JPanel(new BorderLayout());
         JScrollPane jScrollPane = new JScrollPane(tableView);
+        jScrollPane.getHorizontalScrollBar().setUnitIncrement(5);
         jPanel.add(jScrollPane, BorderLayout.CENTER);
         jPanel.add(toolbar, BorderLayout.NORTH);
         jFrame = new JFrame("LogcatFileReader[loading...]");

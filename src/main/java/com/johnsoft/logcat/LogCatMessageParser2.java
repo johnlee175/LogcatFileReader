@@ -41,23 +41,17 @@ public class LogCatMessageParser2 extends LogCatMessageParser {
             if (currLogLevel == null && matcher.group(4).equals("F")) {
                 currLogLevel = LogLevel.ASSERT;
             }
-            boolean flag = false;
-            for (String txtMsg : splitTextWithFixLength(matcher.group(6)/*currMsg*/, DEFAULT_LIMIT)) {
-                String pkgName = "";
-                String threadName = "";
-                messages.add(new LogCatMessage(currLogLevel,
-                        matcher.group(2)/*currPid*/,
-                        matcher.group(3)/*currTid*/,
-                        pkgName,
-                        threadName,
-                        matcher.group(5).trim()/*currTag*/,
-                        matcher.group(1)/*currTime*/,
-                        txtMsg,
-                        flag/*onlyBody*/));
-                if (!flag) {
-                    flag = true;
-                }
-            }
+            String pkgName = "";
+            String threadName = "";
+            messages.add(new LogCatMessage(currLogLevel,
+                    matcher.group(2)/*currPid*/,
+                    matcher.group(3)/*currTid*/,
+                    pkgName,
+                    threadName,
+                    matcher.group(5).trim()/*currTag*/,
+                    matcher.group(1)/*currTime*/,
+                    matcher.group(6),
+                    false/*onlyBody*/));
         }
     }
 }

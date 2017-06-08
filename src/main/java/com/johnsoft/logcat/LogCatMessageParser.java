@@ -110,22 +110,16 @@ public class LogCatMessageParser {
                 mCurLogLevel = LogLevel.ASSERT;
             }
         } else {
-            boolean flag = false;
-            for (String txtMsg : splitTextWithFixLength(line, DEFAULT_LIMIT)) {
-                String pkgName = "";
-                String threadName = "";
-                messages.add(new LogCatMessage(mCurLogLevel, mCurPid, mCurTid,
-                        pkgName, threadName, mCurTag, mCurTime, txtMsg, flag));
-                if (!flag) {
-                    flag = true;
-                }
-            }
+            String pkgName = "";
+            String threadName = "";
+            messages.add(new LogCatMessage(mCurLogLevel, mCurPid, mCurTid,
+                    pkgName, threadName, mCurTag, mCurTime, line, false));
         }
     }
 
-    public static final int DEFAULT_LIMIT = 160;
+    protected static final int DEFAULT_LIMIT = 100;
 
-    public static final List<String> splitTextWithFixLength(String text, int limit) {
+    protected static final List<String> splitTextWithFixLength(String text, int limit) {
         List<String> strings = new ArrayList<>();
         int offset = 0, pos = 0;
         while (text.length() > (pos = offset + limit)) {
@@ -136,5 +130,20 @@ public class LogCatMessageParser {
             strings.add(text.substring(offset, text.length()));
         }
         return strings;
+    }
+
+    protected static final void followLastMessage(String line, List<LogCatMessage> messages) {
+        if (!messages.isEmpty()) {
+            final LogCatMessage m = messages.get(messages.size() - 1);
+            messages.add(new LogCatMessage(m.getLogLevel(),
+                    m.getPid(),
+                    m.getTid(),
+                    m.getAppName(),
+                    m.getThreadName(),
+                    m.getTag(),
+                    m.getTime(),
+                    line,
+                    true));
+        }
     }
 }

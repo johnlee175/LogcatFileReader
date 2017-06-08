@@ -43,34 +43,17 @@ public class LogCatMessageParser3 extends LogCatMessageParser {
             if (currLogLevel == null && matcher.group(4).equals("F")) {
                 currLogLevel = LogLevel.ASSERT;
             }
-            boolean flag = false;
-            for (String txtMsg : splitTextWithFixLength(matcher.group(8), DEFAULT_LIMIT)) {
-                messages.add(new LogCatMessage(currLogLevel,
-                        matcher.group(2)/*currPid*/,
-                        matcher.group(3)/*currTid*/,
-                        matcher.group(6)/*pkgName, use uid instead*/,
-                        matcher.group(7)/*threadName*/,
-                        matcher.group(5)/*currTag*/,
-                        matcher.group(1)/*currTime*/,
-                        txtMsg/*currMsg*/,
-                        flag/*onlyBody*/));
-                if (!flag) {
-                    flag = true;
-                }
-            }
+            messages.add(new LogCatMessage(currLogLevel,
+                    matcher.group(2)/*currPid*/,
+                    matcher.group(3)/*currTid*/,
+                    matcher.group(6)/*pkgName, use uid instead*/,
+                    matcher.group(7)/*threadName*/,
+                    matcher.group(5)/*currTag*/,
+                    matcher.group(1)/*currTime*/,
+                    matcher.group(8)/*currMsg*/,
+                    false/*onlyBody*/));
         } else {
-            if (!messages.isEmpty()) {
-                final LogCatMessage m = messages.get(messages.size() - 1);
-                messages.add(new LogCatMessage(m.getLogLevel(),
-                        m.getPid(),
-                        m.getTid(),
-                        m.getAppName(),
-                        m.getThreadName(),
-                        m.getTag(),
-                        m.getTime(),
-                        line,
-                        false));
-            }
+            followLastMessage(line, messages);
         }
     }
 }
