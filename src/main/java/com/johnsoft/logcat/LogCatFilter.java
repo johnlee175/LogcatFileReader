@@ -49,6 +49,7 @@ public final class LogCatFilter {
     private boolean mCheckThreadName;
     private boolean mCheckTag;
     private boolean mCheckText;
+    private boolean mMixCheck;
 
     private Pattern mAppNamePattern;
     private Pattern mThreadNamePattern;
@@ -66,9 +67,11 @@ public final class LogCatFilter {
      * @param appName  value for the logcat message's app name field.
      * @param logLevel value for the logcat message's log level. Only messages of
      *                 higher priority will be accepted by the filter.
+     * @param mixCheck do mix check
      */
     public LogCatFilter(String name, String tag, String text,
-                        String pid, String tid, String appName, String threadName, LogLevel logLevel) {
+                        String pid, String tid, String appName, String threadName, LogLevel logLevel,
+                        boolean mixCheck) {
         mName = name.trim();
         mTag = tag.trim();
         mText = text.trim();
@@ -77,6 +80,8 @@ public final class LogCatFilter {
         mAppName = appName.trim();
         mThreadName = threadName.trim();
         mLogLevel = logLevel;
+
+        mMixCheck = mixCheck;
 
         mCheckPid = !mPid.isEmpty();
         mCheckTid = !mTid.isEmpty();
@@ -138,7 +143,7 @@ public final class LogCatFilter {
      * Construct a list of {@link LogCatFilter} objects by decoding the query.
      *
      * @param query    encoded search string. The query is simply a list of words (can be regexes)
-     *                 a user would type in a search bar. These words are searched for in the text field of
+     *                 a user would type in a search bar. These words are searched for in the text and tag field of
      *                 each collected logcat message. To search in a different field, the word could be prefixed
      *                 with a keyword corresponding to the field name. Currently, the following keywords are
      *                 supported: "pid:", "tag:" and "text:". Invalid regexes are ignored.
@@ -157,6 +162,7 @@ public final class LogCatFilter {
             String app = "";
             String thread = "";
 
+            boolean mixCheck = false;
             if (s.startsWith(PID_KEYWORD)) {
                 pid = s.substring(PID_KEYWORD.length());
             } else if (s.startsWith(TID_KEYWORD)) {
@@ -167,15 +173,15 @@ public final class LogCatFilter {
                 thread = s.substring(THREAD_KEYWORD.length());
             } else if (s.startsWith(TAG_KEYWORD)) {
                 tag = s.substring(TAG_KEYWORD.length());
+            } else if (s.startsWith(TEXT_KEYWORD)) {
+                text = s.substring(TEXT_KEYWORD.length());
             } else {
-                if (s.startsWith(TEXT_KEYWORD)) {
-                    text = s.substring(TEXT_KEYWORD.length());
-                } else {
-                    text = s;
-                }
+                tag = s;
+                text = s;
+                mixCheck = true;
             }
             filterSettings.add(new LogCatFilter("livefilter-" + s,
-                    tag, text, pid, tid, app, thread, minLevel));
+                    tag, text, pid, tid, app, thread, minLevel, mixCheck));
         }
 
         return filterSettings;
@@ -226,6 +232,10 @@ public final class LogCatFilter {
             return false;
         }
 
+        if (mMixCheck) {
+            return mTagPattern.matcher(m.getTag()).find() || mTextPattern.matcher(m.getMessage()).find();
+        }
+
         /* if pid filter is enabled, filter out messages whose pid does not match
          * the filter's pid */
         if (mCheckPid && !m.getPid().equals(mPid)) {
@@ -262,6 +272,7 @@ public final class LogCatFilter {
             }
         }
 
+        /* if text filter is enabled, filter out messages not matching the text */
         if (mCheckText) {
             Matcher matcher = mTextPattern.matcher(m.getMessage());
             if (!matcher.find()) {
