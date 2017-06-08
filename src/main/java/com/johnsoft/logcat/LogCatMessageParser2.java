@@ -50,7 +50,7 @@ public class LogCatMessageParser2 extends LogCatMessageParser {
                     threadName,
                     matcher.group(5).trim()/*currTag*/,
                     matcher.group(1)/*currTime*/,
-                    matcher.group(6),
+                    markMaxLengthMessage(matcher.group(6))/*currMsg*/,
                     false/*onlyBody*/));
         }
     }

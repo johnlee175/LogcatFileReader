@@ -113,11 +113,13 @@ public class LogCatMessageParser {
             String pkgName = "";
             String threadName = "";
             messages.add(new LogCatMessage(mCurLogLevel, mCurPid, mCurTid,
-                    pkgName, threadName, mCurTag, mCurTime, line, false));
+                    pkgName, threadName, mCurTag, mCurTime,
+                    markMaxLengthMessage(line)/*currMsg*/, false/*onlyBody*/));
         }
     }
 
     protected static final int DEFAULT_LIMIT = 100;
+    protected static volatile String sMaxLengthMessage = "";
 
     protected static final List<String> splitTextWithFixLength(String text, int limit) {
         List<String> strings = new ArrayList<>();
@@ -132,6 +134,17 @@ public class LogCatMessageParser {
         return strings;
     }
 
+    protected static final String markMaxLengthMessage(String line) {
+        if (line.length() > sMaxLengthMessage.length()) {
+            sMaxLengthMessage = line;
+        }
+        return line;
+    }
+
+    public static final String getMaxLengthMessage() {
+        return sMaxLengthMessage;
+    }
+
     protected static final void followLastMessage(String line, List<LogCatMessage> messages) {
         if (!messages.isEmpty()) {
             final LogCatMessage m = messages.get(messages.size() - 1);
@@ -142,8 +155,8 @@ public class LogCatMessageParser {
                     m.getThreadName(),
                     m.getTag(),
                     m.getTime(),
-                    line,
-                    true));
+                    markMaxLengthMessage(line)/*currMsg*/,
+                    true)/*onlyBody*/);
         }
     }
 }

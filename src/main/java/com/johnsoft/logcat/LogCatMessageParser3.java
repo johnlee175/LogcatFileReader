@@ -50,7 +50,7 @@ public class LogCatMessageParser3 extends LogCatMessageParser {
                     matcher.group(7)/*threadName*/,
                     matcher.group(5)/*currTag*/,
                     matcher.group(1)/*currTime*/,
-                    matcher.group(8)/*currMsg*/,
+                    markMaxLengthMessage(matcher.group(8))/*currMsg*/,
                     false/*onlyBody*/));
         } else {
             followLastMessage(line, messages);

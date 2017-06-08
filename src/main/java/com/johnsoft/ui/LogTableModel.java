@@ -16,6 +16,12 @@
  */
 package com.johnsoft.ui;
 
+import com.johnsoft.logcat.LogCatFilter;
+import com.johnsoft.logcat.LogCatMessage;
+import com.johnsoft.logcat.LogicalPredicate;
+
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,19 +31,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import javax.swing.SwingUtilities;
-import javax.swing.table.AbstractTableModel;
-
-import com.johnsoft.logcat.LogCatFilter;
-import com.johnsoft.logcat.LogCatMessage;
-import com.johnsoft.logcat.LogicalPredicate;
-
 /**
  * @author John Kenrinus Lee
  * @version 2016-04-25
  */
 public final class LogTableModel extends AbstractTableModel implements LogTableView.CommonModel {
-    private static final String[] COLUMN_HEADERS = new String[] {
+    public static final String[] COLUMN_HEADERS = new String[] {
             "Level", "Time", "PID", "TID", "Application", "Thread", "Tag", "Text"
     };
     private static final int COLUMN_COUNT = COLUMN_HEADERS.length;

@@ -17,6 +17,7 @@
 package com.johnsoft.ui;
 
 import com.johnsoft.logcat.LogCatFilter;
+import com.johnsoft.logcat.LogCatMessageParser;
 import com.johnsoft.logcat.LogLevel;
 import com.johnsoft.logcat.LogicalPredicate;
 
@@ -138,7 +139,7 @@ public class LogTableView extends JTable {
         configColumn(table, "Thread", true, 50);
         TableColumn textColumn = table.getColumn("Text");
         textColumn.setMinWidth(500);
-        textColumn.setPreferredWidth(500);
+        textColumn.setPreferredWidth(textColumn.getMinWidth());
         textColumn.setCellRenderer(new MultiLineCellRenderer());
 
         table.getTableHeader().addMouseListener(new MouseAdapter() {
@@ -166,12 +167,33 @@ public class LogTableView extends JTable {
                     }
                 }
             }));
+            private final JCheckBoxMenuItem fitTextColumnWidth = (JCheckBoxMenuItem) popupMenu.add(
+                    new JCheckBoxMenuItem(new AbstractAction("fit column width to text") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            final TableColumnModel columnModel = table.getColumnModel();
+                            final String[] headers = LogTableModel.COLUMN_HEADERS;
+                            final int columnIdx = columnModel.getColumnIndex(headers[headers.length - 1]);
+                            final TableColumn column = columnModel.getColumn(columnIdx);
+                            if (fitTextColumnWidth.getState()) {
+                                final String maxLengthMessage = LogCatMessageParser.getMaxLengthMessage();
+                                final Font font = table.getFont();
+                                final FontMetrics fm = table.getFontMetrics(font);
+                                column.setPreferredWidth(fm.stringWidth(maxLengthMessage) + 40);
+                            } else {
+                                column.setPreferredWidth(column.getMinWidth());
+                            }
+                        }
+                    }));
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON3) {//right click
                     final int columnIdx = table.getTableHeader().columnAtPoint(e.getPoint());
                     final TableColumnModel columnModel = table.getColumnModel();
-                    hideColumn.setText(prefixText + " " + columnModel.getColumn(columnIdx).getIdentifier());
+                    final String identifier = String.valueOf(columnModel.getColumn(columnIdx).getIdentifier());
+                    hideColumn.setText(prefixText + " " + identifier);
+                    final String[] headers = LogTableModel.COLUMN_HEADERS;
+                    fitTextColumnWidth.setVisible(headers[headers.length - 1].equals(identifier));
                     popupMenu.show(table.getTableHeader(), e.getX(), e.getY());
                 }
             }
