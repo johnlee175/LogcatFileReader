@@ -44,7 +44,8 @@ public class LogCatMessageParser3 extends LogCatMessageParser {
                 currLogLevel = LogLevel.ASSERT;
             }
 
-            messages.add(new LogCatMessage(currLogLevel,
+            messages.add(new LogCatMessage(++mMessageCount,
+                    currLogLevel,
                     matcher.group(3)/*currPid*/,
                     matcher.group(4)/*currTid*/,
                     matcher.group(7)/*pkgName, use uid instead*/,

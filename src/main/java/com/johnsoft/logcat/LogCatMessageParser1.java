@@ -31,6 +31,7 @@ public class LogCatMessageParser1 extends LogCatMessageParser {
     private String mCurTag = "?";
     private String mCurTime = "?:??";
     private String mCommonHeader = "[]";
+    private boolean mNewMessage;
 
     /**
      * This pattern is meant to parse the first line of a log message with the option
@@ -64,10 +65,15 @@ public class LogCatMessageParser1 extends LogCatMessageParser {
                 mCurLogLevel = LogLevel.ASSERT;
             }
             mCommonHeader = line;
+            mNewMessage = true;
         } else {
+            if (mNewMessage) {
+                mNewMessage = false;
+                ++mMessageCount;
+            }
             String pkgName = "";
             String threadName = "";
-            messages.add(new LogCatMessage(mCurLogLevel, mCurPid, mCurTid,
+            messages.add(new LogCatMessage(mMessageCount, mCurLogLevel, mCurPid, mCurTid,
                     pkgName, threadName, mCurTag, mCurTime, line, mCommonHeader));
             if (ParsePolicy.COMMON_HEADER_FIRST_BLANKING.equals(getParsePolicy())) {
                 mCommonHeader = getBlank(mCommonHeader.length());

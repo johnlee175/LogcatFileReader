@@ -80,32 +80,59 @@ public final class LogTableModel extends AbstractTableModel implements LogTableV
             @Override
             public void run() {
                 final ArrayList<Integer> indexList = new ArrayList<>();
-                for (int i = 0; i < modelSize; ++i) {
-                    LogCatMessage message = modelList.get(i);
-                    boolean match;
-                    if (predicate == LogicalPredicate.AND) {
-                        match = true;
-                        for (LogCatFilter f : list) {
-                            if (!f.matches(message)) {
-                                match = false;
-                                break;
-                            }
-                        }
-                    } else if (predicate == LogicalPredicate.OR) {
-                        match = false;
-                        for (LogCatFilter f : list) {
-                            if (f.matches(message)) {
-                                match = true;
-                                break;
-                            }
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Unknown LogicalPredicate");
-                    }
-                    if (match) {
+                long start = System.currentTimeMillis();
+                if (list.size() == 1 && LogCatFilter.NO_FILTER.equals(list.get(0))) {
+                    for (int i = 0; i < modelSize; ++i) {
                         indexList.add(i);
                     }
+                } else {
+                    for (int i = 0; i < modelSize; ++i) {
+                        final LogCatMessage message = modelList.get(i);
+                        boolean match;
+                        if (predicate == LogicalPredicate.AND) {
+                            match = true;
+                            for (LogCatFilter f : list) {
+                                if (!f.matches(message)) {
+                                    match = false;
+                                    break;
+                                }
+                            }
+                        } else if (predicate == LogicalPredicate.OR) {
+                            match = false;
+                            for (LogCatFilter f : list) {
+                                if (f.matches(message)) {
+                                    match = true;
+                                    break;
+                                }
+                            }
+                        } else {
+                            throw new IllegalArgumentException("Unknown LogicalPredicate");
+                        }
+                        if (match) {
+                            indexList.add(i);
+                            final int current = indexList.size() - 1;
+                            final long id = message.getId();
+                            for (int j = i - 1; j >= 0; --j) {
+                                if (id == modelList.get(j).getId()) {
+                                    indexList.add(current, j);
+                                } else {
+                                    break;
+                                }
+                            }
+                            int k = 0;
+                            for (int j = i + 1; j < modelSize; ++j) {
+                                if (id == modelList.get(j).getId()) {
+                                    indexList.add(j);
+                                    ++k;
+                                } else {
+                                    break;
+                                }
+                            }
+                            i += k;
+                        }
+                    }
                 }
+                System.out.println("filter take " + (System.currentTimeMillis() - start));
                 synchronized (LogTableModel.this) {
                     viewList = indexList;
                 }

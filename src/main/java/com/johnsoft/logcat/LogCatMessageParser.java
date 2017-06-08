@@ -42,7 +42,8 @@ public abstract class LogCatMessageParser {
             } else {
                 commonHeader = "";
             }
-            messages.add(new LogCatMessage(m.getLogLevel(),
+            messages.add(new LogCatMessage(m.getId(),
+                    m.getLogLevel(),
                     m.getPid(),
                     m.getTid(),
                     m.getAppName(),
@@ -61,6 +62,8 @@ public abstract class LogCatMessageParser {
         }
         return blank;
     }
+
+    protected volatile long mMessageCount;
 
     public final List<LogCatMessage> processLogLines(String[] lines) {
         final List<LogCatMessage> messages = new ArrayList<>(lines.length);

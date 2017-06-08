@@ -17,6 +17,7 @@
 package com.johnsoft.ui;
 
 import com.johnsoft.logcat.LogCatFilter;
+import com.johnsoft.logcat.LogCatFilterImpl;
 import com.johnsoft.logcat.LogLevel;
 import com.johnsoft.logcat.LogicalPredicate;
 
@@ -337,7 +338,7 @@ public class LogTableView extends JTable {
     }
 
     private void doFilter() {
-        List<LogCatFilter> logCatFilters = LogCatFilter.fromString(messageFilter.getText(),
+        List<LogCatFilter> logCatFilters = LogCatFilterImpl.fromString(messageFilter.getText(),
                 (LogLevel) levelSelector.getSelectedItem());
         if (logCatFilters != null && !logCatFilters.isEmpty()) {
             ((LogTableModel) getModel()).setRowFilter(logCatFilters,

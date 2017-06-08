@@ -22,6 +22,7 @@ package com.johnsoft.logcat;
  * the tag and message itself.
  */
 public final class LogCatMessage {
+    private final long mId;
     private final LogLevel mLogLevel;
     private final String mPid;
     private final String mTid;
@@ -35,9 +36,10 @@ public final class LogCatMessage {
     /**
      * Construct an immutable log message object.
      */
-    public LogCatMessage(LogLevel logLevel, String pid, String tid,
+    public LogCatMessage(long id, LogLevel logLevel, String pid, String tid,
                          String appName, String threadName, String tag,
                          String time, String msg, String commonHeader) {
+        mId = id;
         mLogLevel = logLevel;
         mPid = pid;
         mAppName = appName;
@@ -55,6 +57,10 @@ public final class LogCatMessage {
             tid = "";
         }
         mTid = tid;
+    }
+
+    public long getId() {
+        return mId;
     }
 
     public LogLevel getLogLevel() {
@@ -96,7 +102,8 @@ public final class LogCatMessage {
     @Override
     public String toString() {
         return "LogCatMessage{" +
-                "mLogLevel=" + mLogLevel +
+                "mId=" + mId +
+                ", mLogLevel=" + mLogLevel +
                 ", mPid='" + mPid + '\'' +
                 ", mTid='" + mTid + '\'' +
                 ", mAppName='" + mAppName + '\'' +
