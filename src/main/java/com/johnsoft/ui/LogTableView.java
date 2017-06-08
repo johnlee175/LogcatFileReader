@@ -90,7 +90,7 @@ public class LogTableView extends JTable {
             return;
         }
         selectRow(this, idx);
-        if (resultDescription != null && ((findNextOne && idx <= row) || (!findNextOne && idx >= row))) {
+        if (resultDescription != null && ((findNextOne && idx < row) || (!findNextOne && idx > row))) {
             resultDescription.setText("wrapped search");
         }
     }
@@ -195,7 +195,9 @@ public class LogTableView extends JTable {
                         final JTable subTable = new JTable(subModel);
                         initDefaults(subTable);
                         JDialog peeContextTip = new JDialog(window, "SubContextView[" + modelRow + "]");
-                        peeContextTip.setContentPane(new JScrollPane(subTable));
+                        JScrollPane scrollPane = new JScrollPane(subTable);
+                        scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+                        peeContextTip.setContentPane(scrollPane);
                         peeContextTip.setSize(1000, 500);
                         peeContextTip.setMinimumSize(new Dimension(600, 200));
                         peeContextTip.setLocationRelativeTo(null);
