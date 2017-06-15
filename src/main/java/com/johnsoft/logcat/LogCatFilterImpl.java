@@ -26,15 +26,20 @@ import java.util.regex.PatternSyntaxException;
  * different fields of a logcat message. It can then be queried to see if
  * a message matches the filter's settings.
  */
-public final class LogCatFilterImpl implements LogCatFilter {
-    private final String mName;
-    private final String mTag;
-    private final String mText;
+public final class LogCatFilterImpl extends BasicLogCatFilter {
+    public static final String PID_KEYWORD = "pid:";
+    public static final String TID_KEYWORD = "tid:";
+    public static final String APP_KEYWORD = "app:";
+    public static final String THREAD_KEYWORD = "thread:";
+    public static final String TAG_KEYWORD = "tag:";
+    public static final String TEXT_KEYWORD = "text:";
+
     private final String mPid;
     private final String mTid;
     private final String mAppName;
     private final String mThreadName;
-    private final LogLevel mLogLevel;
+    private final String mTag;
+    private final String mText;
 
     private boolean mCheckPid;
     private boolean mCheckTid;
@@ -42,6 +47,7 @@ public final class LogCatFilterImpl implements LogCatFilter {
     private boolean mCheckThreadName;
     private boolean mCheckTag;
     private boolean mCheckText;
+
     private boolean mMixCheck;
 
     private Pattern mAppNamePattern;
@@ -65,14 +71,14 @@ public final class LogCatFilterImpl implements LogCatFilter {
     public LogCatFilterImpl(String name, String tag, String text,
                             String pid, String tid, String appName, String threadName, LogLevel logLevel,
                             boolean mixCheck) {
-        mName = name.trim();
-        mTag = tag.trim();
-        mText = text.trim();
+        super(name, logLevel);
+
         mPid = pid.trim();
         mTid = tid.trim();
         mAppName = appName.trim();
         mThreadName = threadName.trim();
-        mLogLevel = logLevel;
+        mTag = tag.trim();
+        mText = text.trim();
 
         mMixCheck = mixCheck;
 
@@ -116,26 +122,6 @@ public final class LogCatFilterImpl implements LogCatFilter {
         }
     }
 
-    /**
-     * Obtain the flags to pass to {@link Pattern#compile(String, int)}. This method
-     * tries to figure out whether case sensitive matching should be used. It is based on
-     * the following heuristic: if the regex has an upper case character, then the match
-     * will be case sensitive. Otherwise it will be case insensitive.
-     */
-    private int getPatternCompileFlags(String regex) {
-        for (char c : regex.toCharArray()) {
-            if (Character.isUpperCase(c)) {
-                return 0;
-            }
-        }
-
-        return Pattern.CASE_INSENSITIVE;
-    }
-
-    public String getName() {
-        return mName;
-    }
-
     public String getTag() {
         return mTag;
     }
@@ -160,10 +146,6 @@ public final class LogCatFilterImpl implements LogCatFilter {
         return mThreadName;
     }
 
-    public LogLevel getLogLevel() {
-        return mLogLevel;
-    }
-
     /**
      * Check whether a given message will make it through this filter.
      *
@@ -173,8 +155,7 @@ public final class LogCatFilterImpl implements LogCatFilter {
      */
     @Override
     public boolean matches(LogCatMessage m) {
-        /* filter out messages of a lower priority */
-        if (m.getLogLevel().getPriority() < mLogLevel.getPriority()) {
+        if (!super.matches(m)) {
             return false;
         }
 
@@ -245,17 +226,17 @@ public final class LogCatFilterImpl implements LogCatFilter {
         List<LogCatFilter> filterSettings = new ArrayList<LogCatFilter>();
 
         if (query.trim().isEmpty()) {
-            filterSettings.add(NO_FILTER);
+            filterSettings.add(new BasicLogCatFilter("LevelFilter", minLevel));
             return filterSettings;
         }
 
         for (String s : query.trim().split(" ")) {
-            String tag = "";
-            String text = "";
             String pid = "";
             String tid = "";
             String app = "";
             String thread = "";
+            String tag = "";
+            String text = "";
 
             boolean mixCheck = false;
             if (s.startsWith(PID_KEYWORD)) {
@@ -275,10 +256,26 @@ public final class LogCatFilterImpl implements LogCatFilter {
                 text = s;
                 mixCheck = true;
             }
-            filterSettings.add(new LogCatFilterImpl("livefilter-" + s,
+            filterSettings.add(new LogCatFilterImpl("FullFilter-" + s,
                     tag, text, pid, tid, app, thread, minLevel, mixCheck));
         }
 
         return filterSettings;
+    }
+
+    /**
+     * Obtain the flags to pass to {@link Pattern#compile(String, int)}. This method
+     * tries to figure out whether case sensitive matching should be used. It is based on
+     * the following heuristic: if the regex has an upper case character, then the match
+     * will be case sensitive. Otherwise it will be case insensitive.
+     */
+    private static int getPatternCompileFlags(String regex) {
+        for (char c : regex.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                return 0;
+            }
+        }
+
+        return Pattern.CASE_INSENSITIVE;
     }
 }

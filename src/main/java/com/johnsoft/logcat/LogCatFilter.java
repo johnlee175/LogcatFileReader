@@ -38,13 +38,6 @@ public interface LogCatFilter {
         }
     };
 
-    String PID_KEYWORD = "pid:";
-    String TID_KEYWORD = "tid:";
-    String APP_KEYWORD = "app:";
-    String THREAD_KEYWORD = "thread:";
-    String TAG_KEYWORD = "tag:";
-    String TEXT_KEYWORD = "text:";
-
     String getName();
 
     LogLevel getLogLevel();
