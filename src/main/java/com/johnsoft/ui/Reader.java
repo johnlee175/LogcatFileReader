@@ -16,19 +16,55 @@
  */
 package com.johnsoft.ui;
 
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListCellRenderer;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
+
 import com.johnsoft.logcat.LogCatMessage;
 import com.johnsoft.logcat.LogCatMessageParser;
 import com.johnsoft.logcat.LogCatMessageParser2;
 import com.johnsoft.logcat.LogCatMessageParser3;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.FileFilter;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 
 /**
  * @author John Kenrinus Lee
@@ -231,7 +267,7 @@ public class Reader {
         toolbar.add(selectors, BorderLayout.EAST);
         JPanel jPanel = new JPanel(new BorderLayout());
         JScrollPane jScrollPane = new JScrollPane(tableView);
-        jScrollPane.getHorizontalScrollBar().setUnitIncrement(5);
+        jScrollPane.getHorizontalScrollBar().setUnitIncrement(20);
         jPanel.add(jScrollPane, BorderLayout.CENTER);
         jPanel.add(toolbar, BorderLayout.NORTH);
         jFrame = new JFrame("LogcatFileReader[loading...]");
